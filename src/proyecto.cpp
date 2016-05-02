@@ -11,7 +11,7 @@ int quantum;
 
 // Barrera de control
 pthread_barrier_t barrera;
-//pthread_barrier_init(&barrera,NULL,3);
+//
     
 // Cache de instrucciones que tiene cada CPU
 int cache[4][17];
@@ -24,6 +24,15 @@ int reg[32];
     
 //Estructura de datos para los contextos
 int contextos[4][33];
+
+void falloCache (int direccion, int seccion) {
+    for(int a = 0; a < 16; a++) {
+        cache [seccion][a] = memPrin[direccion];
+        direccion++;
+        // Aqui va la barrera
+        //pthread_barrier_wait(&barrera);
+    }
+}
 
 int* buscarBloque(int pc) {
     int bloque = pc/16;
@@ -45,17 +54,8 @@ int* buscarBloque(int pc) {
     return plbPtr;
 }
 
-void falloCache (int direccion, int seccion) {
-    for(int a = 0; a < 16; a++) {
-        cache [seccion][a] = memPrin[direccion];
-        direccion++;
-        // Aqui va la barrera
-        //pthread_barrier_wait(&barrera);
-    }
-}
-
 int main () {
-
-    
+    pthread_t thread_id_1,thread_id_2,thread_id_3,thread_id_4;
+    pthread_barrier_init(&barrera,NULL,3);
     return 0;
 }
