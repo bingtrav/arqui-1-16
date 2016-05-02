@@ -55,7 +55,7 @@ int* buscarBloque(int pc) {
 }
 
 int main () {
-    pthread_t thread_id_1,thread_id_2,thread_id_3,thread_id_4;
-    pthread_barrier_init(&barrera,NULL,3);
+    //pthread_t thread_id_1,thread_id_2,thread_id_3,thread_id_4;
+    //pthread_barrier_init(&barrera,NULL,3);
     return 0;
 }
