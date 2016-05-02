@@ -18,15 +18,22 @@ int reg[32];
 //Estructura de datos para los contextos
 int contextos[4][33];
 
-int buscarBloque(int pc) {
+int* buscarBloque(int pc) {
     int bloque = pc/16;
     int palabra = pc%16;
     int seccion = bloque%4;
-    
+    int plb[4];
     
     if(cache[seccion][16] == bloque) {
+        for(int a = 0; a < 4; a++) {
+            plb[a] = cache[seccion][palabra];
+            palabra++;
+        }
+    } else {
         
     }
+    
+    return plb;
 }
 
 int main () {
