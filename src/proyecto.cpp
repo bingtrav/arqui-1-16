@@ -2,6 +2,17 @@
 // http://tuxthink.blogspot.com/2013/01/ussing-barriers-in-pthreads.html
 // Se incluye la biclioteca de hilos
 #include <pthread.h>
+#include <iostream>
+
+using namespace std;
+
+#define numHilos 3
+
+/*struct datosCpu () {
+    int reg[32];
+    int cache[4][17];
+    int contextos[4][33];
+};*/
 
 //PC del CPU
 int pc;
@@ -54,8 +65,13 @@ int* buscarBloque(int pc) {
     return plbPtr;
 }
 
-int main () {
-    pthread_t thread_id_1,thread_id_2,thread_id_3,thread_id_4;
-    pthread_barrier_init(&barrera,NULL,3);
+int main (int argc, char** argv) {
+    pthread_t threads[numHilos];
+    //struct datosCpu [numHilos];
+    
+    cout <<"Digite el numero de hilos"<<endl;
+    
+    //pthread_t thread_id_1,thread_id_2,thread_id_3,thread_id_4;
+    //pthread_barrier_init(&barrera,NULL,3);
     return 0;
 }
