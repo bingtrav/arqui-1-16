@@ -1,15 +1,19 @@
 /* Proyecto Arquitectura de Computadoras. */
 // http://tuxthink.blogspot.com/2013/01/ussing-barriers-in-pthreads.html
 // http://www.bogotobogo.com/cplusplus/multithreading_pthread.php
+// Compilar con pthreads: g++ -pthread  proyecto2.cpp -o proyecto2
+
 // Se incluye la biclioteca de hilos
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <dirent.h>
 
 using namespace std;
 
+// Constante con el número de hilos = número de CPU's
 #define numHilos 3
 
 // Número de hilos que se manejarán en lso 3 CPU's
@@ -36,6 +40,7 @@ int quantum3; //quantum del CPU3
 // Barrera de control
 pthread_barrier_t barrier;
 
+
 // Cache de instrucciones que tiene cada CPU
 int cache1[4][17];
 int cache2[4][17];
@@ -55,15 +60,15 @@ int reg3[32];
 //Estructura de datos para los contextos
 /*
     Estructura:
-        -------------------------------
-        |0=pc|1-32=registros|33= EP/F |
-        -------------------------------
-        | PC |R1=0,...,R32=4|  true   |
-        -------------------------------
+        -------------------------------------------------------------------------------
+        |0=pc|1-32=registros|33= EP/F |34= Ciclo-Inicio|35= Ciclo-Final|36= id-subHilo|
+        -------------------------------------------------------------------------------
+        | PC |R1=0,...,R32=4|  true   |  inicio-ciclo  |   fin-ciclo   |  id-subHilo  |
+        -------------------------------------------------------------------------------
 */
-int contextos1[4][34];
-int contextos2[4][34];
-int contextos3[4][34];
+int contextos1[4][37];
+int contextos2[4][37];
+int contextos3[4][37];
 
 /* 
     Este metodo se encarga de realizar el cambio de contexto segun el CPU que lo solicite. 
@@ -156,7 +161,8 @@ void falloCache (int direccion, int seccion, int id_hilo) {
                 direccion++;
                 pthread_barrier_wait(&barrier);
             }
-            quantum1++;
+            
+            cuentaIns(id_hilo);
             break;
          }
     }
@@ -213,6 +219,7 @@ int* buscarBloque(int pc, int id_hilo) {
 }
 
 void procesarPalabra(int* palabra, int id_hilo) {
+    //aumento de PC
     switch (id_hilo) {
                 case 1:{
                     pc1+=4;
@@ -252,15 +259,15 @@ void procesarPalabra(int* palabra, int id_hilo) {
             // DADD; RX, RY, RZ; Rx <-- (Ry) + (Rz)
             switch (id_hilo) {
                 case 1:{
-                    reg1[palabra[3]] = reg1[palabra[1]] + reg1[palabra[2]]
+                    reg1[palabra[3]] = reg1[palabra[1]] + reg1[palabra[2]];
                     break;
                  }
                 case 2:{
-                    reg2[palabra[3]] = reg2[palabra[1]] + reg2[palabra[2]]
+                    reg2[palabra[3]] = reg2[palabra[1]] + reg2[palabra[2]];
                     break;
                 }
                 case 3:{
-                    reg3[palabra[3]] = reg3[palabra[1]] + reg3[palabra[2]]
+                    reg3[palabra[3]] = reg3[palabra[1]] + reg3[palabra[2]];
                     break;
                 }
             }
@@ -270,15 +277,15 @@ void procesarPalabra(int* palabra, int id_hilo) {
             // DSUB; RX, RY, RZ; Rx <-- (Ry) - (Rz)
             switch (id_hilo) {
                 case 1:{
-                    reg1[palabra[3]] = reg1[palabra[1]] - reg1[palabra[2]]
+                    reg1[palabra[3]] = reg1[palabra[1]] - reg1[palabra[2]];
                     break;
                  }
                 case 2:{
-                    reg2[palabra[3]] = reg2[palabra[1]] - reg2[palabra[2]]
+                    reg2[palabra[3]] = reg2[palabra[1]] - reg2[palabra[2]];
                     break;
                 }
                 case 3:{
-                    reg3[palabra[3]] = reg3[palabra[1]] - reg3[palabra[2]]
+                    reg3[palabra[3]] = reg3[palabra[1]] - reg3[palabra[2]];
                     break;
                 }
             }
@@ -288,15 +295,15 @@ void procesarPalabra(int* palabra, int id_hilo) {
             // DMUL; RX, RY, RZ; Rx <-- (Ry) * (Rz)
             switch (id_hilo) {
                 case 1:{
-                    reg1[palabra[3]] = reg1[palabra[1]] * reg1[palabra[2]]
+                    reg1[palabra[3]] = reg1[palabra[1]] * reg1[palabra[2]];
                     break;
                  }
                 case 2:{
-                    reg2[palabra[3]] = reg2[palabra[1]] * reg2[palabra[2]]
+                    reg2[palabra[3]] = reg2[palabra[1]] * reg2[palabra[2]];
                     break;
                 }
                 case 3:{
-                    reg3[palabra[3]] = reg3[palabra[1]] * reg3[palabra[2]]
+                    reg3[palabra[3]] = reg3[palabra[1]] * reg3[palabra[2]];
                     break;
                 }
             }
@@ -306,15 +313,15 @@ void procesarPalabra(int* palabra, int id_hilo) {
             // DDIV; RX, RY, RZ; Rx <-- (Ry) / (Rz)
             switch (id_hilo) {
                 case 1:{
-                    reg1[palabra[3]] = reg1[palabra[1]] / reg1[palabra[2]]
+                    reg1[palabra[3]] = reg1[palabra[1]] / reg1[palabra[2]];
                     break;
                  }
                 case 2:{
-                    reg2[palabra[3]] = reg2[palabra[1]] / reg2[palabra[2]]
+                    reg2[palabra[3]] = reg2[palabra[1]] / reg2[palabra[2]];
                     break;
                 }
                 case 3:{
-                    reg3[palabra[3]] = reg3[palabra[1]] / reg3[palabra[2]]
+                    reg3[palabra[3]] = reg3[palabra[1]] / reg3[palabra[2]];
                     break;
                 }
             }
@@ -322,8 +329,8 @@ void procesarPalabra(int* palabra, int id_hilo) {
          }
          case 4:{
             // BEQZ; RX, ETIQ; Si Rx = 0 SALTA
+            int salto = palabra[3] * 4;
             switch (id_hilo) {
-                int salto = palabra[3] * 4;
                 case 1:{
                     if(reg1[palabra[1]]==0){
                         pc1+=salto;
@@ -347,8 +354,8 @@ void procesarPalabra(int* palabra, int id_hilo) {
          }
          case 5:{
             //BNEZ; RX, ETIQ; Si Rx <> 0 SALTA
+            int salto = palabra[3] * 4;
             switch (id_hilo) {
-                int salto = palabra[3] * 4;
                 case 1:{
                     if(reg1[palabra[1]]!=0){
                         pc1+=salto;
@@ -432,60 +439,113 @@ void procesarPalabra(int* palabra, int id_hilo) {
       pthread_barrier_wait(&barrier);
 }
 
-void cargarHilos(int hilos){
+bool checkContextos(int id_hilo){
+    bool check = false; //retorna true si aun hay contextos
     
+    switch (id_hilo) {
+        case 1:{
+            for(int i = 0; i < 4; i++) {
+                if(contextos1[i][33] == 0) {
+                    check = true;
+                }
+            }
+            break;
+        }
+        case 2:{
+            for(int i = 0; i < 4; i++) {
+                if(contextos2[i][33] == 0) {
+                    check = true;
+                }
+            }
+            break;
+        }
+        case 3:{
+            for(int i = 0; i < 4; i++) {
+                if(contextos1[i][33] == 0) {
+                    check = true;
+                }
+            }
+            break;
+        }
+    }
+    return check;
+}
+
+void cargarHilos(int hilos){
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir ("/arquiproy/src")) != NULL) {
+        //print all the files and directories within directory *
+        while ((ent = readdir (dir)) != NULL) {
+        printf ("%s\n", ent->d_name);
+        }
+        closedir (dir);
+    } else {
+        /* could not open directory */
+        perror ("");
+        //return EXIT_FAILURE;
+    }
     
 }
 
 void *CPU(void *param)
 {
-    //int id = *((int*)(&param));
-    //int plb[4];
-
-    //if(id == 1){
-        //cargar los hilos a cada procesador a la memoria principal y a los contentextos
-        //pthread_barrier_wait(&barrier);
-    //}
-    //cargar pc con dato del hilo, se busca en el contexto
-
+    int id_hilo = *((int*)(&param)); //Id del procesador
+    int* plb[4]; // Arreglo donde se guarda el bloque buscado
+    
     //cargar palabra en CPU para procesar.
-    // plb[4] = buscarBloque(pc);
+    switch (id_hilo) {
+        case 1:{
+            while(checkContextos(id_hilo) == true) {
+                plb[4] = buscarBloque(pc1, id_hilo);
+                procesarPalabra(*plb,id_hilo);
+            }
+            break;
+        }
+        case 2:{
+            while(checkContextos(id_hilo) == true) {
+                plb[4] = buscarBloque(pc2, id_hilo);
+                procesarPalabra(*plb,id_hilo);
+            }
+            break;
+        }
+        case 3:{
+            while(checkContextos(id_hilo) == true) {
+                plb[4] = buscarBloque(pc3, id_hilo);
+                procesarPalabra(*plb,id_hilo);
+            }
+            break;
+        }
+    }
+    
 
-    // procesar palabra
-    //repetir
-    pthread_barrier_wait(&barrier);
+
     printf("Estoy aqui\n");
 }
 
 int main (int argc, char** argv) {
-    pthread_t hilo1, hilo2, hilo3;
+    /*pthread_t hilo1, hilo2, hilo3;
     int ret;
-    
     cout << "Por favor digite el número de contextos tendrá el programa:" << endl;
     cin >> subHilos;
-    cargarHilos(subHilos)<
+    cargarHilos(subHilos);
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum;
     quantum--;                  // Resta uno porque ya se contempla que se debe de hacer esa instruccion.
     
-    {
-        /*
-            Aquí se debe de cargar todos los valores para que inicie cada uno de los CPUs 
-            y además se debe de cargar los demas contextos en la memoria de contextos.
-        */
-    }
+ 
     pthread_barrier_init(&barrier, NULL, 4);
     ret =  pthread_create(&hilo1, NULL, &CPU, (void*)1);
     ret =  pthread_create(&hilo2, NULL, &CPU, (void*)2);
     ret =  pthread_create(&hilo3, NULL, &CPU, (void*)3);
-    pthread_barrier_wait(&barrier);
-    printf("Hilo principal!!\n");
+    
+    ~
     pthread_join(hilo1, 0);
     pthread_join(hilo2, 0);
     pthread_join(hilo3, 0);
-    pthread_exit(NULL);
-    
-    
+    pthread_barrier_destroy(&barrier);
+    pthread_exit(NULL);*/
+    cargarHilos(3);
     
     return 0;
 }
