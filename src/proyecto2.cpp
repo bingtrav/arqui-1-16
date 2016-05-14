@@ -2,6 +2,7 @@
 // http://tuxthink.blogspot.com/2013/01/ussing-barriers-in-pthreads.html
 // http://www.bogotobogo.com/cplusplus/multithreading_pthread.php
 // Compilar con pthreads: g++ -pthread  proyecto2.cpp -o proyecto2
+// http://jrivc1.blogspot.com/p/5.html
 
 // Se incluye la biclioteca de hilos
 #include <pthread.h>
@@ -10,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
+#include <string.h>
 
 using namespace std;
 
@@ -47,6 +49,8 @@ int cache2[4][17];
 int cache3[4][17];
 
 //Memoria principal
+// [0]   --- [127] ---> memoria compartida
+// [128] --- [383] ---> memoria compartida
 int memPrin1[384];
 int memPrin2[384];
 int memPrin3[384];
@@ -472,54 +476,180 @@ bool checkContextos(int id_hilo){
 }
 
 void cargarHilos(int hilos){
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir ("/arquiproy/src")) != NULL) {
-        //print all the files and directories within directory *
-        while ((ent = readdir (dir)) != NULL) {
-        printf ("%s\n", ent->d_name);
+    int contHilos = 0; // Conteo de los hilos que se van a insertar a los CPU's
+    int procesador = 1; // Variable que contiene el procesador actual al cual se le agregará un hilo
+    int contMenInt1 = 128; // Contador para la inserción de instruccinoes en la memoria del CPU 1
+    int contMenInt2 = 128; // Contador para la inserción de instruccinoes en la memoria del CPU 2
+    int contMenInt3 = 128; // Contador para la inserción de instruccinoes en la memoria del CPU 3
+    int contHilo1 = 0; // Contador para la inserción de hilos a la tabla de contextos del CPU 1
+    int contHilo2 = 0; // Contador para la inserción de hilos a la tabla de contextos del CPU 2
+    int contHilo3 = 0; // Contador para la inserción de hilos a la tabla de contextos del CPU 3
+    // Variables para la lectura de los archivos
+    DIR *d;
+    char *p1,*p2;
+    int ret;
+    struct dirent *dir;
+    d = opendir(".");
+    if (d)
+    {
+        while (((dir = readdir(d)) != NULL) && (contHilos < hilos))
+        {
+            p1=strtok(dir->d_name,".");
+            p2=strtok(NULL,".");
+            if(p2!=NULL)
+            {
+                ret=strcmp(p2,"txt"); // Chequea si el archivo es un "".txt"
+                if(ret==0)
+                {
+                    contHilos++;
+                    strcat (p1,".txt"); // Agregamos la extensión
+                	ifstream file(p1);
+                    string str; 
+                    
+                        switch (procesador) {
+                        case 1:{
+                            cout << "CPU 1: ";
+                            cout << endl;
+                            contextos1[contHilo1][0] = contMenInt1;
+                            contextos1[contHilo1][36] = contHilos;
+                            contHilo1++;
+                            while (file >> str){
+                                memPrin1[contMenInt1] = atoi(str.c_str());
+                                contMenInt1++;
+                            }
+                            procesador = 2;
+                            break;
+                         }
+                        case 2:{
+                            cout << "CPU 2: ";
+                            cout << endl;
+                            contextos2[contHilo2][0] = contMenInt2;
+                            contextos2[contHilo2][36] = contHilos;
+                            contHilo2++;
+                            while (file >> str){
+                                memPrin2[contMenInt2] = atoi(str.c_str());
+                                contMenInt2++;
+                            }
+                            procesador = 3;
+                            break;
+                        }
+                        case 3:{
+                            cout << "CPU 3: ";
+                            cout << endl;    
+                            contextos3[contHilo3][0] = contMenInt3;
+                            contextos3[contHilo3][36] = contHilos;
+                            contHilo3++;
+                            while (file >> str){
+                                memPrin3[contMenInt3] = atoi(str.c_str());
+                                contMenInt3++;
+                            }
+                            procesador = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
         }
-        closedir (dir);
-    } else {
-        /* could not open directory */
-        perror ("");
-        //return EXIT_FAILURE;
+        closedir(d);
+    }
+}
+
+void imprimirMemP() {
+    cout << "Mem 1: ";
+    cout << endl;
+    for(int i= 128; i < 383; i++){
+        cout << memPrin1[i] << " - ";
+    }
+    cout << endl;
+    cout << "Mem 2: ";
+    cout << endl;
+    for(int i= 128; i < 383; i++){
+        cout << memPrin2[i] << " - ";
+    }
+    cout << endl;
+    cout << "Mem 3: ";
+    cout << endl;
+    for(int i= 128; i < 383; i++){
+        cout << memPrin3[i] << " - ";
+    }
+        
+}
+
+void imprimircontextos(){
+    cout << endl;
+    cout << "Contexto 1: ";
+    cout << endl;
+    for(int i = 0; i < 4; i++){
+        cout << endl;
+        for(int c = 0; c < 37; c++){
+            cout << contextos1[i][c] << " - "; 
+        }
     }
     
+    cout << endl;
+    cout << "Contexto 2: ";
+    cout << endl;
+    for(int i = 0; i < 4; i++){
+        cout << endl;
+        for(int c = 0; c < 37; c++){
+            cout << contextos2[i][c] << " - "; 
+        }
+    }
+    
+    cout << endl;
+    cout << "Contexto 3: ";
+    cout << endl;
+    for(int i = 0; i < 4; i++){
+        cout << endl;
+        for(int c = 0; c < 37; c++){
+            cout << contextos3[i][c] << " - "; 
+        }
+    }
 }
 
 void *CPU(void *param)
 {
     int id_hilo = *((int*)(&param)); //Id del procesador
     int* plb[4]; // Arreglo donde se guarda el bloque buscado
-    
+    printf("Estoy aqui1\n");
     //cargar palabra en CPU para procesar.
+    
     switch (id_hilo) {
         case 1:{
+            printf("Estoy aquiCPU1\n");
+            
             while(checkContextos(id_hilo) == true) {
-                plb[4] = buscarBloque(pc1, id_hilo);
+                *plb = buscarBloque(pc1, id_hilo);
+                printf("bloqueListo CPU1\n");
                 procesarPalabra(*plb,id_hilo);
+                printf("Listo CPU1\n");
             }
             break;
         }
         case 2:{
+            printf("Estoy aquiCPU2\n");
             while(checkContextos(id_hilo) == true) {
-                plb[4] = buscarBloque(pc2, id_hilo);
+                *plb = buscarBloque(pc2, id_hilo);
+                printf("bloqueListo CPU2\n");
                 procesarPalabra(*plb,id_hilo);
+                printf("Listo CPU2\n");
             }
             break;
         }
         case 3:{
+            printf("Estoy aquiCPU3\n");
             while(checkContextos(id_hilo) == true) {
-                plb[4] = buscarBloque(pc3, id_hilo);
+                *plb = buscarBloque(pc3, id_hilo);
+                printf("bloqueListo CPU3\n");
                 procesarPalabra(*plb,id_hilo);
+                printf("Listo CPU3\n");
             }
             break;
         }
+            
     }
     
-
-
     printf("Estoy aqui\n");
 }
 
@@ -532,20 +662,28 @@ int main (int argc, char** argv) {
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum;
     quantum--;                  // Resta uno porque ya se contempla que se debe de hacer esa instruccion.
+    */
     
- 
-    pthread_barrier_init(&barrier, NULL, 4);
+    cargarHilos(3);
+    imprimirMemP();
+    imprimircontextos();
+    pthread_t hilo1, hilo2, hilo3;
+    int ret;
+    
+    pthread_barrier_init(&barrier, NULL, 3);
     ret =  pthread_create(&hilo1, NULL, &CPU, (void*)1);
     ret =  pthread_create(&hilo2, NULL, &CPU, (void*)2);
     ret =  pthread_create(&hilo3, NULL, &CPU, (void*)3);
     
-    ~
+    
     pthread_join(hilo1, 0);
     pthread_join(hilo2, 0);
     pthread_join(hilo3, 0);
     pthread_barrier_destroy(&barrier);
-    pthread_exit(NULL);*/
-    cargarHilos(3);
+    pthread_exit(NULL);
+    imprimirMemP();
+    imprimircontextos();
+    
     
     return 0;
 }
