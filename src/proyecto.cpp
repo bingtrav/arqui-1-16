@@ -1,6 +1,4 @@
 /* Proyecto Arquitectura de Computadoras. */
-// http://tuxthink.blogspot.com/2013/01/ussing-barriers-in-pthreads.html
-// http://www.bogotobogo.com/cplusplus/multithreading_pthread.php
 // Compilar con pthreads: g++ -pthread  proyecto.cpp -o proyecto
 
 // Se incluye la biclioteca de hilos
@@ -12,6 +10,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <vector>
+#include <list>
 
 using namespace std;
 
@@ -50,18 +49,64 @@ int cache1[4][17];
 int cache2[4][17];
 int cache3[4][17];
 
-//Memoria principal
-// [0]   --- [127] ---> memoria compartida
-// [128] --- [383] ---> memoria compartida
+// Cache de datos que tiene cada CPU
+int cacheDatos1[4][6];
+int cacheDatos2[4][6];
+int cacheDatos3[4][6];
+
+// booleano que simula semaforo para el ingreso a cache true = cache libre, false = cache ocupado
+bool cacheDisponible[3];
+
+// Directorio que maneja informacion y estado de los Bloques que tiene cada CPU
+int directorio1[8][4];
+int directorio2[8][4];
+int directorio3[8][4];
+
+// booleano que simula semaforo para el ingreso a Directorio true = directoro libre, false = directorio ocupado
+bool DirDisponible[3];
+
+// cola para ingreso Cache de datos que tiene cada CPU
+list<int> colaCache1;
+list<int> colaCache2;
+list<int> colaCache3;
+
+// cola para ingreso Cache de datos que tiene cada CPU
+list<int> colaDir1;
+list<int> colaDir2;
+list<int> colaDir3;
+
+
+/*
+    Memoria principal
+        --------------------------------
+        |  0  ... 127 | Mem Compartida |
+        | 128 ... 383 | Mem Compartida |
+        --------------------------------
+*/
 int memPrin1[384];
 int memPrin2[384];
 int memPrin3[384];
+
+/*
+    Memoria Compartida de Datos
+        -----------------------------
+        | 0 ... 32 | Mem Compartida |
+        -----------------------------
+*/
+int memDatos1[32];
+int memDatos2[32];
+int memDatos3[32];
 
 
 //Registros de CPU
 int reg1[32];
 int reg2[32];
 int reg3[32];
+
+// Registros RL de cada CPU
+int RL1;
+int RL2;
+int RL3;
 
 //Estructura de datos para los contextos
 /*
@@ -612,6 +657,26 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             }
             break;
          }
+         case 50:{
+            // FIN Detiene el programa
+            switch (id_hilo) {
+                case 1:{
+                    dir = reg1[palabra[1]] + palabra[3];
+                    
+                    estado1 = 0;
+                    break;
+                 }
+                case 2:{
+                    estado2 = 0;
+                    break;
+                }
+                case 3:{
+                    estado3 = 0;
+                    break;
+                }
+            }
+            break;
+         }
          case 63:{
             // FIN Detiene el programa
             switch (id_hilo) {
@@ -740,7 +805,6 @@ void cargarHilos(int hilos){
                     }
                 }
             }
-
         }
         closedir(d);
     }
@@ -749,7 +813,9 @@ void cargarHilos(int hilos){
 // Método principal que va a ejecutar cada CPU
 void *CPU(void *param)
 {
+    // Sincroniza los hilos con el principal.
     pthread_barrier_wait(&barrier);
+    
     int id_hilo = *((int*)(&param)); //Id del procesador
     vector<int> plb(4); // Arreglo donde se guarda el bloque buscado
     
@@ -813,7 +879,7 @@ int main (int argc, char** argv) {
     cargarHilos(subHilos);
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum; // Se guarda le quantum global que se usará en el programa
-
+    
     quantum1 = quantum;
     quantum2 = quantum;
     quantum3 = quantum; // Se sincronizan los 3 quantum con el quantum que se ingresa
@@ -821,21 +887,24 @@ int main (int argc, char** argv) {
     ciclo = 1; // Iniciamos la variable del conteo de ciclos en 1
     estado1 = estado2 = estado3 = 1; // Los estados de los suhilos los inicilizamos en 1 --> 1 = hilo en ejecución y 0 lo contrario.
     
-    cout << "Inicia la ejecucion" << endl;
+    //cout << "Inicia la ejecucion" << endl;
 
     pthread_barrier_init(&barrier, NULL, 4); //inicializa la barrera para que espere 
     ret =  pthread_create(&hilo1, NULL, &CPU, (void*)1); // Se crea el hilo y se manda a ejecutar su programa principal
     ret =  pthread_create(&hilo2, NULL, &CPU, (void*)2); // Se crea el hilo y se manda a ejecutar su programa principal
     ret =  pthread_create(&hilo3, NULL, &CPU, (void*)3); // Se crea el hilo y se manda a ejecutar su programa principal
-    
+
+    // Sincroniza el principal con los hilos, los hilos hacen wait en el metodo CPU.
     pthread_barrier_wait(&barrier);
+    
     // Se chequea en el main si no queden hilos sin terminar en cada CPU
     // Si un CPU termina, espera a que los demás terminen su trabajo
     while(checkContextos(1) == true || checkContextos(2) == true || checkContextos(3) == true){ 
-        
         ciclo++; // Se aumenta el contador de ciclos
         pthread_barrier_wait(&barrier);
     }
+    
+    
     
 
     pthread_join(hilo1, 0);
@@ -844,8 +913,8 @@ int main (int argc, char** argv) {
 
     imprimirInfoHilo();
 
-    cout << endl;
-    cout << "Todos terminaron" << endl;
+    //cout << endl;
+    //cout << "Todos terminaron" << endl;
     
     pthread_barrier_destroy(&barrier);
     pthread_exit(NULL);
