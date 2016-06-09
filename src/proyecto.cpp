@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include <dirent.h>
+#include <dirent.h>                                                            
 #include <string.h>
 #include <vector>
 #include <list>
@@ -27,6 +27,10 @@ int ciclo;
 int pc1;
 int pc2;
 int pc3;
+
+bool cpu1 = true;
+bool cpu2= true;
+bool cpu3= true;
 
 //Contexto actual del CPU y el estado que tendrá luego del cambio de contexto.
 int cntxActual1, estado1;
@@ -658,12 +662,15 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             break;
          }
          case 50:{
-            // FIN Detiene el programa
+            // LL
             switch (id_hilo) {
                 case 1:{
+                    /*int bloque, palabra;
                     dir = reg1[palabra[1]] + palabra[3];
+                    bloque = dir/16; 
+                    palabra = dir%16;*/
                     
-                    estado1 = 0;
+                    
                     break;
                  }
                 case 2:{
@@ -828,8 +835,10 @@ void *CPU(void *param)
                 procesarPalabra(plb,id_hilo); //Procesa la palabra que esta en el plb.
                 pthread_barrier_wait(&barrier);
             }
-            while(checkContextos(2) == true || checkContextos(3) == true){ 
+            cout << "CPU1" << checkContextos(1)  << checkContextos(2)  <<checkContextos(3) <<endl;
+            while(cpu1 || cpu2 || cpu3){ 
                // cout<<"fin CPU1"<<endl;
+                cpu1 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
             }
             
@@ -844,9 +853,11 @@ void *CPU(void *param)
                 procesarPalabra(plb,id_hilo); //Procesa la palabra que esta en el plb.
                 pthread_barrier_wait(&barrier);
             }
-            while(checkContextos(1) == true || checkContextos(3) == true){ 
-               // cout<<"fin CPU2"<<endl;
-                pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU2 termina sus hilos, que espere a los otros mientras teminan
+            cout << "CPU2" << checkContextos(1)  << checkContextos(2)  <<checkContextos(3) <<endl;
+            while(cpu1 || cpu2 || cpu3){ 
+               // cout<<"fin CPU1"<<endl;
+                cpu2 = false;
+                pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
             }
             
             
@@ -860,8 +871,10 @@ void *CPU(void *param)
                 procesarPalabra(plb,id_hilo); //Procesa la palabra que esta en el plb.
                 pthread_barrier_wait(&barrier);
             }
-            while(checkContextos(1) == true || checkContextos(2) == true){ 
-               // cout<<"fin CPU3"<<endl;
+            cout << "CPU3" <<checkContextos(1)  << checkContextos(2)  <<checkContextos(3) <<endl;
+            while(cpu1 || cpu2 || cpu3){ 
+               // cout<<"fin CPU1"<<endl;
+                cpu3 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
             }
             
@@ -899,7 +912,7 @@ int main (int argc, char** argv) {
     
     // Se chequea en el main si no queden hilos sin terminar en cada CPU
     // Si un CPU termina, espera a que los demás terminen su trabajo
-    while(checkContextos(1) == true || checkContextos(2) == true || checkContextos(3) == true){ 
+    while(cpu1 || cpu2 || cpu3){ 
         ciclo++; // Se aumenta el contador de ciclos
         pthread_barrier_wait(&barrier);
     }
