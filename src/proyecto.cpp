@@ -233,6 +233,45 @@ void imprimirInfoHilo() {
 }
 
 
+void pedirCache(int id_hilo, int cache) {
+    switch(cache) {
+        case 1:
+            colaCache1.push_back(id_hilo);
+            while(colaCache1.front() != id_hilo);
+        
+            break;
+        case 2:
+            colaCache2.push_back(id_hilo);
+            while(colaCache2.front() != id_hilo);
+            
+            break;
+        case 3:
+            colaCache3.push_back(id_hilo);
+            while(colaCache3.front() != id_hilo);
+            
+            break;
+    }
+}
+
+void pedirDirectorio(int id_hilo, int cache) {
+    switch(cache) {
+        case 1:
+            colaCache1.push_back(id_hilo);
+            
+            while(colaCache1.front() != id_hilo);
+            
+            
+            break;
+        case 2:
+            
+            break;
+        case 3:
+            
+            break;
+    }
+}
+
+
 /* 
     Este metodo se encarga de realizar el cambio de contexto segun el CPU que lo solicite. 
     En caso de que el contecto actual este inactivo, o sea, contextos[id_hilo][33] == 0, 
@@ -661,24 +700,32 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             }
             break;
          }
-         case 50:{
-            // LL
+         case 35:{
+            // LW; RX, n(RY) Rx <-- M(n + (Ry)) 
             switch (id_hilo) {
                 case 1:{
-                    /*int bloque, palabra;
+                    int bloque, palabra, dir;
+                    
+                    colaCache1.push_back(id_hilo);
+                    
                     dir = reg1[palabra[1]] + palabra[3];
                     bloque = dir/16; 
-                    palabra = dir%16;*/
-                    
+                    palabra = dir%16;
                     
                     break;
                  }
                 case 2:{
-                    estado2 = 0;
+                    int bloque, palabra, dir;
+                    dir = reg2[palabra[1]] + palabra[3];
+                    bloque = dir/16; 
+                    palabra = dir%16;
                     break;
                 }
                 case 3:{
-                    estado3 = 0;
+                    int bloque, palabra, dir;
+                    dir = reg3[palabra[1]] + palabra[3];
+                    bloque = dir/16; 
+                    palabra = dir%16;
                     break;
                 }
             }
@@ -835,7 +882,6 @@ void *CPU(void *param)
                 procesarPalabra(plb,id_hilo); //Procesa la palabra que esta en el plb.
                 pthread_barrier_wait(&barrier);
             }
-            cout << "CPU1" << checkContextos(1)  << checkContextos(2)  <<checkContextos(3) <<endl;
             while(cpu1 || cpu2 || cpu3){ 
                // cout<<"fin CPU1"<<endl;
                 cpu1 = false;
@@ -853,7 +899,6 @@ void *CPU(void *param)
                 procesarPalabra(plb,id_hilo); //Procesa la palabra que esta en el plb.
                 pthread_barrier_wait(&barrier);
             }
-            cout << "CPU2" << checkContextos(1)  << checkContextos(2)  <<checkContextos(3) <<endl;
             while(cpu1 || cpu2 || cpu3){ 
                // cout<<"fin CPU1"<<endl;
                 cpu2 = false;
@@ -871,7 +916,6 @@ void *CPU(void *param)
                 procesarPalabra(plb,id_hilo); //Procesa la palabra que esta en el plb.
                 pthread_barrier_wait(&barrier);
             }
-            cout << "CPU3" <<checkContextos(1)  << checkContextos(2)  <<checkContextos(3) <<endl;
             while(cpu1 || cpu2 || cpu3){ 
                // cout<<"fin CPU1"<<endl;
                 cpu3 = false;
@@ -926,8 +970,8 @@ int main (int argc, char** argv) {
 
     imprimirInfoHilo();
 
-    //cout << endl;
-    //cout << "Todos terminaron" << endl;
+    cout << endl;
+    cout << "Todos terminaron" << endl;
     
     pthread_barrier_destroy(&barrier);
     pthread_exit(NULL);
