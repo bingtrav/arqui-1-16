@@ -232,34 +232,48 @@ void imprimirInfoHilo() {
         
 }
 
-
-void pedirCache(int id_hilo, int cache) {
+/*
+*   Devuelve boolean por X o Y motivo que podria no recibir la cache.
+*/
+bool pedirCache(int id_hilo, int cache) {
+    bool obtiene = false;
     switch(cache) {
         case 1:
             colaCache1.push_back(id_hilo);
-            while(colaCache1.front() != id_hilo);
-        
+            if(colaCache1.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaCache1.remove(id_hilo);
+                obtiene = false;
+            }
+            
             break;
         case 2:
             colaCache2.push_back(id_hilo);
             while(colaCache2.front() != id_hilo);
-            
+            obtiene = true;
             break;
         case 3:
             colaCache3.push_back(id_hilo);
             while(colaCache3.front() != id_hilo);
-            
+            obtiene = true;
             break;
     }
+    return obtiene;
 }
 
+/*
+*   En el caso del directorio puede que lo que busca no se puede obtener y tiene que devolver la resolucion en un boolean.
+*/
 void pedirDirectorio(int id_hilo, int cache) {
+    bool obtiene = false;
     switch(cache) {
         case 1:
             colaCache1.push_back(id_hilo);
             
             while(colaCache1.front() != id_hilo);
             
+            obtiene = true;
             
             break;
         case 2:
@@ -269,6 +283,7 @@ void pedirDirectorio(int id_hilo, int cache) {
             
             break;
     }
+    return obtiene;
 }
 
 
@@ -385,7 +400,7 @@ void cuentaIns(int id_hilo) {
 }
 
 // Método que trae al caché del respectivo CPU los bloques que den un fallo de caché
-void falloCache (int id_bloque, int direccion, int seccion, int id_hilo) {
+void falloCache(int id_bloque, int direccion, int seccion, int id_hilo) {
     switch (id_hilo)
       {
          case 1:{
@@ -430,9 +445,9 @@ vector<int> buscarBloque(int id_hilo) {
     switch (id_hilo)
       {
          case 1:{ 
-            bloque = pc1/16; //bloque CPU1 
-            palabra = pc1%16; //palabra CPU1
-            seccion = bloque%4; //seccion CPU1
+            bloque = pc1/16;            //bloque CPU1 
+            palabra = pc1%16;           //palabra CPU1
+            seccion = bloque%4;         //seccion CPU1
             // Mientras el bloque no este en la seccion de la cache que le corresponde se mete a fallo de cache 
             while(cache1[seccion][16] != bloque) {
                 int dirFisica = bloque * 16; // Calcula la dirección física en memoria
@@ -451,9 +466,9 @@ vector<int> buscarBloque(int id_hilo) {
             break;
          }
          case 2:{
-            bloque = pc2/16; //bloque CPU2
-            palabra = pc2%16; //palabra CPU2
-            seccion = bloque%4; //seccion CPU2
+            bloque = pc2/16;            //bloque CPU2
+            palabra = pc2%16;           //palabra CPU2
+            seccion = bloque%4;         //seccion CPU2
             // Mientras el bloque no este en la seccion de la cache que le corresponde se mete a fallo de cache 
             while(cache2[seccion][16] != bloque) {
                 int dirFisica = bloque * 16; // Calcula la dirección física en memoria
@@ -472,9 +487,9 @@ vector<int> buscarBloque(int id_hilo) {
             break;
          }
          case 3:{
-            bloque = pc3/16; //bloque CPU3
-            palabra = pc3%16; //palabra CPU3
-            seccion = bloque%4; //seccion CPU3
+            bloque = pc3/16;            //bloque CPU3
+            palabra = pc3%16;           //palabra CPU3
+            seccion = bloque%4;         //seccion CPU3
             // Mientras el bloque no este en la seccion de la cache que le corresponde se mete a fallo de cache 
             while(cache3[seccion][16] != bloque) {
                 int dirFisica = bloque * 16; // Calcula la dirección física en memoria
@@ -516,13 +531,12 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
     }
     switch (palabra[0] )
-      {
+        {
          case 8:{
             //DADDI; RX, RY, #n; Rx <-- (Ry) + n
             switch (id_hilo) {
                 case 1:{
                     reg1[palabra[2]] = reg1[palabra[1]] + palabra[3];
-
                     break;
                  }
                 case 2:{
@@ -536,14 +550,14 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             
             }
             break;
-         }
-         case 32:{
+        }
+        case 32:{
             // DADD; RX, RY, RZ; Rx <-- (Ry) + (Rz)
             switch (id_hilo) {
                 case 1:{
                     reg1[palabra[3]] = reg1[palabra[1]] + reg1[palabra[2]];
                     break;
-                 }
+                }
                 case 2:{
                     reg2[palabra[3]] = reg2[palabra[1]] + reg2[palabra[2]];
                     break;
@@ -554,15 +568,14 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 34:{
+        }
+        case 34:{
             // DSUB; RX, RY, RZ; Rx <-- (Ry) - (Rz)
             switch (id_hilo) {
                 case 1:{
-                   
                     reg1[palabra[3]] = reg1[palabra[1]] - reg1[palabra[2]];
                     break;
-                 }
+                }
                 case 2:{
                     reg2[palabra[3]] = reg2[palabra[1]] - reg2[palabra[2]];
                     break;
@@ -573,15 +586,14 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 12:{
+        }
+        case 12:{
             // DMUL; RX, RY, RZ; Rx <-- (Ry) * (Rz)
             switch (id_hilo) {
                 case 1:{
-                  
                     reg1[palabra[3]] = reg1[palabra[1]] * reg1[palabra[2]];
                     break;
-                 }
+                }
                 case 2:{
                     reg2[palabra[3]] = reg2[palabra[1]] * reg2[palabra[2]];
                     break;
@@ -592,14 +604,14 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 14:{
+        }
+        case 14:{
             // DDIV; RX, RY, RZ; Rx <-- (Ry) / (Rz)
             switch (id_hilo) {
                 case 1:{
                     reg1[palabra[3]] = reg1[palabra[1]] / reg1[palabra[2]];
                     break;
-                 }
+                }
                 case 2:{
                     reg2[palabra[3]] = reg2[palabra[1]] / reg2[palabra[2]];
                     break;
@@ -610,8 +622,8 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 4:{
+        }
+        case 4:{
             // BEQZ; RX, ETIQ; Si Rx = 0 SALTA
             int salto = palabra[3] * 4;
             switch (id_hilo) {
@@ -620,7 +632,7 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                         pc1+=salto;
                     }
                     break;
-                 }
+                }
                 case 2:{
                     if(reg2[palabra[1]]==0){
                         pc2+=salto;
@@ -635,8 +647,8 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 5:{
+        }
+        case 5:{
             //BNEZ; RX, ETIQ; Si Rx <> 0 SALTA
             int salto = palabra[3] * 4;
             switch (id_hilo) {
@@ -660,15 +672,15 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 3:{
+        }
+        case 3:{
             // JAL; n; R31<--PC, PC<-- PC+n
             switch (id_hilo) {
                 case 1:{
                     reg1[31] = pc1;
                     pc1 += palabra[3]; 
                     break;
-                 }
+                }
                 case 2:{
                     reg2[31] = pc2;
                     pc2 += palabra[3]; 
@@ -681,14 +693,14 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 2:{
+        }
+        case 2:{
             // JR; RX; PC <-- (Rx)
             switch (id_hilo) {
                 case 1:{
                     pc1 = reg1[palabra[1]]; 
                     break;
-                 }
+                }
                 case 2:{
                     pc2 = reg2[palabra[1]]; 
                     break;
@@ -699,8 +711,8 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 35:{
+        }
+        case 35:{
             // LW; RX, n(RY) Rx <-- M(n + (Ry)) 
             switch (id_hilo) {
                 case 1:{
@@ -713,7 +725,7 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                     palabra = dir%16;
                     
                     break;
-                 }
+                }
                 case 2:{
                     int bloque, palabra, dir;
                     dir = reg2[palabra[1]] + palabra[3];
@@ -730,14 +742,46 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                 }
             }
             break;
-         }
-         case 63:{
+        }
+        case 43:{
+            // SW; RX, n(RY) M(n + (Ry)) <-- Rx
+            // NOTA 1: FALTA EDITAR TODO A PARTIR DE AQUI
+            switch (id_hilo) {
+                case 1:{
+                    int bloque, palabra, dir;
+                    
+                    colaCache1.push_back(id_hilo);
+                    
+                    dir = reg1[palabra[1]] + palabra[3];
+                    bloque = dir/16; 
+                    palabra = dir%16;
+                    
+                    break;
+                }
+                case 2:{
+                    int bloque, palabra, dir;
+                    dir = reg2[palabra[1]] + palabra[3];
+                    bloque = dir/16; 
+                    palabra = dir%16;
+                    break;
+                }
+                case 3:{
+                    int bloque, palabra, dir;
+                    dir = reg3[palabra[1]] + palabra[3];
+                    bloque = dir/16; 
+                    palabra = dir%16;
+                    break;
+                }
+            }
+            break;
+        }
+        case 63:{
             // FIN Detiene el programa
             switch (id_hilo) {
                 case 1:{
                     estado1 = 0;
                     break;
-                 }
+                }
                 case 2:{
                     estado2 = 0;
                     break;
@@ -749,8 +793,8 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             }
             break;
          }
-      }
-      cuentaIns(id_hilo);
+     }
+     cuentaIns(id_hilo);
 }
 
 // Chequea si a un CPU le quedan hilos sin terminar
