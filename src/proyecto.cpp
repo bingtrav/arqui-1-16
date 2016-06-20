@@ -3,8 +3,7 @@
 // mutex try lock
 // http://en.cppreference.com/w/cpp/thread/mutex/try_lock
 
-// Se incluye la biclioteca de hilos
-#include <pthread.h>
+#include <pthread.h>                    // Se incluye la biclioteca de hilos
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -12,8 +11,7 @@
 #include <dirent.h>                                                            
 #include <string.h>
 #include <vector>
-#include <list>
-#include <mutex>
+#include <mutex>                        // Manejo de zonas criticas.
 
 using namespace std;
 
@@ -32,8 +30,8 @@ int pc2;
 int pc3;
 
 bool cpu1 = true;
-bool cpu2= true;
-bool cpu3= true;
+bool cpu2 = true;
+bool cpu3 = true;
 
 //Contexto actual del CPU y el estado que tendrá luego del cambio de contexto.
 int cntxActual1, estado1;
@@ -57,6 +55,15 @@ int cache2[4][17];
 int cache3[4][17];
 
 // Cache de datos que tiene cada CPU
+/*
+    Cache de Datos
+        ----------------------------------------------------------------
+        |  datos  | numero de bloque | estado 0 = "C", 1 = "M", 2 = "I"|     
+        ----------------------------------------------------------------
+        | 0 ... 3 |         4        |                  5              |    
+        ----------------------------------------------------------------
+*/
+
 int cacheDatos1[4][6];
 int cacheDatos2[4][6];
 int cacheDatos3[4][6];
@@ -81,17 +88,6 @@ mutex mDirectorio3;
 
 // booleano que simula semaforo para el ingreso a Directorio true = directoro libre, false = directorio ocupado
 bool DirDisponible[3];
-
-// cola para ingreso Cache de datos que tiene cada CPU
-list<int> colaCache1;
-list<int> colaCache2;
-list<int> colaCache3;
-
-// cola para ingreso Cache de datos que tiene cada CPU
-list<int> colaDir1;
-list<int> colaDir2;
-list<int> colaDir3;
-
 
 /*
     Memoria principal
@@ -675,15 +671,38 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
         /*****************************************/
         case 35:{
             // LW; RX, n(RY) Rx <-- M(n + (Ry)) 
+            // estado 0 = "C", 1 = "M", 2 = "I"
             switch (id_hilo) {
                 case 1:{
-                    int bloque, palabra, dir;
-                    
-                    colaCache1.push_back(id_hilo);
+                    int bloque, palabraInterna, dir, seccion;
+                    bool pasoInseguro = true;
                     
                     dir = reg1[palabra[1]] + palabra[3];
                     bloque = dir/16; 
                     palabra = dir%16;
+                    seccion = bloque%4;  
+                    while(pasoInseguro)
+                        if(mCacheDatos1.try_lock()){
+                            if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] == 0)){
+                                   reg1[2] = cacheDatos1[seccion][palabraInterna];
+                            }else{
+                                switch (bloque) {
+                                case 1:{
+                                    
+                                    break;
+                                }
+                                case 2:{
+                                    
+                                    break;
+                                }
+                                case 3:{
+                                    
+                                    break;
+                                }
+                            }
+                            }
+                        }
+                    
                     
                     break;
                 }
@@ -709,25 +728,16 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             // NOTA 1: FALTA EDITAR TODO A PARTIR DE AQUI
             switch (id_hilo) {
                 case 1:{
-                    int bloque, palabra, dir;
-                    dir = reg1[palabra[1]] + palabra[3];
-                    bloque = dir/16; 
-                    palabra = dir%16;
+                    
                     
                     break;
                 }
                 case 2:{
-                    int bloque, palabra, dir;
-                    dir = reg2[palabra[1]] + palabra[3];
-                    bloque = dir/16; 
-                    palabra = dir%16;
+                    
                     break;
                 }
                 case 3:{
-                    int bloque, palabra, dir;
-                    dir = reg3[palabra[1]] + palabra[3];
-                    bloque = dir/16; 
-                    palabra = dir%16;
+                    
                     break;
                 }
             }
