@@ -1,5 +1,7 @@
 /* Proyecto Arquitectura de Computadoras. */
 // Compilar con pthreads: g++ -pthread  proyecto.cpp -o proyecto
+// mutex try lock
+// http://en.cppreference.com/w/cpp/thread/mutex/try_lock
 
 // Se incluye la biclioteca de hilos
 #include <pthread.h>
@@ -11,6 +13,7 @@
 #include <string.h>
 #include <vector>
 #include <list>
+#include <mutex>
 
 using namespace std;
 
@@ -58,6 +61,11 @@ int cacheDatos1[4][6];
 int cacheDatos2[4][6];
 int cacheDatos3[4][6];
 
+// Mutex para el uso de caches
+mutex mCacheDatos1;
+mutex mCacheDatos2;
+mutex mCacheDatos3;
+
 // booleano que simula semaforo para el ingreso a cache true = cache libre, false = cache ocupado
 bool cacheDisponible[3];
 
@@ -65,6 +73,11 @@ bool cacheDisponible[3];
 int directorio1[8][4];
 int directorio2[8][4];
 int directorio3[8][4];
+
+// Mutex para el uso de directorios
+mutex mDirectorio1;
+mutex mDirectorio2;
+mutex mDirectorio3;
 
 // booleano que simula semaforo para el ingreso a Directorio true = directoro libre, false = directorio ocupado
 bool DirDisponible[3];
@@ -231,61 +244,6 @@ void imprimirInfoHilo() {
     }
         
 }
-
-/*
-*   Devuelve boolean por X o Y motivo que podria no recibir la cache.
-*/
-bool pedirCache(int id_hilo, int cache) {
-    bool obtiene = false;
-    switch(cache) {
-        case 1:
-            colaCache1.push_back(id_hilo);
-            if(colaCache1.front() == id_hilo) {
-                obtiene = true;
-            } else {
-                colaCache1.remove(id_hilo);
-                obtiene = false;
-            }
-            
-            break;
-        case 2:
-            colaCache2.push_back(id_hilo);
-            while(colaCache2.front() != id_hilo);
-            obtiene = true;
-            break;
-        case 3:
-            colaCache3.push_back(id_hilo);
-            while(colaCache3.front() != id_hilo);
-            obtiene = true;
-            break;
-    }
-    return obtiene;
-}
-
-/*
-*   En el caso del directorio puede que lo que busca no se puede obtener y tiene que devolver la resolucion en un boolean.
-*/
-void pedirDirectorio(int id_hilo, int cache) {
-    bool obtiene = false;
-    switch(cache) {
-        case 1:
-            colaCache1.push_back(id_hilo);
-            
-            while(colaCache1.front() != id_hilo);
-            
-            obtiene = true;
-            
-            break;
-        case 2:
-            
-            break;
-        case 3:
-            
-            break;
-    }
-    return obtiene;
-}
-
 
 /* 
     Este metodo se encarga de realizar el cambio de contexto segun el CPU que lo solicite. 
@@ -712,6 +670,9 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             }
             break;
         }
+        /*****************************************/
+        /* REALIZAR EL LOAD PARA HABLAR EL JUEVES*/
+        /*****************************************/
         case 35:{
             // LW; RX, n(RY) Rx <-- M(n + (Ry)) 
             switch (id_hilo) {
@@ -749,9 +710,6 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             switch (id_hilo) {
                 case 1:{
                     int bloque, palabra, dir;
-                    
-                    colaCache1.push_back(id_hilo);
-                    
                     dir = reg1[palabra[1]] + palabra[3];
                     bloque = dir/16; 
                     palabra = dir%16;

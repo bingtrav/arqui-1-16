@@ -1,0 +1,95 @@
+*
+*   Devuelve boolean por X o Y motivo que podria no recibir la cache.
+*/
+bool pedirCache(int id_hilo, int cache) {
+    bool obtiene = false;
+    switch(cache) {
+        case 1:
+            colaCache1.push_back(id_hilo);
+            if(colaCache1.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaCache1.remove(id_hilo);
+                obtiene = false;
+            }
+            
+            break;
+        case 2:
+            colaCache2.push_back(id_hilo);
+            if(colaCache2.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaCache2.remove(id_hilo);
+                obtiene = false;
+            }
+            break;
+        case 3:
+            colaCache3.push_back(id_hilo);
+            if(colaCache3.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaCache3.remove(id_hilo);
+                obtiene = false;
+            }
+            break;
+    }
+    return obtiene;
+}
+
+/*
+*   Devuelve boolean por X o Y motivo que podria no recibir la cache.
+*/
+bool liberarCache(int id_hilo, int cache) {
+    bool obtiene = false;
+    switch(cache) {
+        case 1:
+            colaCache1.front_front();
+            
+            break;
+        case 2:
+            
+            break;
+        case 3:
+            
+            break;
+    }
+    return obtiene;
+}
+
+/*
+*   En el caso del directorio puede que lo que busca no se puede obtener y tiene que devolver la resolucion en un boolean.
+*/
+void pedirDirectorio(int id_hilo, int cache) {
+    bool obtiene = false;
+    switch(cache) {
+        case 1:
+            colaDir1.push_back(id_hilo);
+            if(colaDir1.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaDir1.remove(id_hilo);
+                obtiene = false;
+            }
+            
+            break;
+        case 2:
+            colaDir2.push_back(id_hilo);
+            if(colaDir2.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaDir2.remove(id_hilo);
+                obtiene = false;
+            }
+            break;
+        case 3:
+            colaDir3.push_back(id_hilo);
+            if(colaDir3.front() == id_hilo) {
+                obtiene = true;
+            } else {
+                colaDir3.remove(id_hilo);
+                obtiene = false;
+            }
+            break;
+    }
+    return obtiene;
+}
