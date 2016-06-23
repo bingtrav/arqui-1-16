@@ -10,8 +10,7 @@
 #include <fstream>
 #include <dirent.h>                                                            
 #include <string.h>
-#include <vector>
-#include <mutex>                        // Manejo de zonas criticas.
+#include <vector>                  // Manejo de zonas criticas.
 
 using namespace std;
 
@@ -69,22 +68,30 @@ int cacheDatos2[4][6];
 int cacheDatos3[4][6];
 
 // Mutex para el uso de caches
-mutex mCacheDatos1;
-mutex mCacheDatos2;
-mutex mCacheDatos3;
+ pthread_mutex_t  mCacheDatos1;
+ pthread_mutex_t  mCacheDatos2;
+ pthread_mutex_t  mCacheDatos3;
 
 // booleano que simula semaforo para el ingreso a cache true = cache libre, false = cache ocupado
 bool cacheDisponible[3];
 
 // Directorio que maneja informacion y estado de los Bloques que tiene cada CPU
+/*
+    Cache de Datos
+        ----------------------------------------------------------------
+        |  estado 0 = "C", 1 = "M", 2 = "U"  | CPUS   | 
+        ----------------------------------------------------------------
+        |                 0                  |  1..3  |    
+        ----------------------------------------------------------------
+*/
 int directorio1[8][4];
 int directorio2[8][4];
 int directorio3[8][4];
 
 // Mutex para el uso de directorios
-mutex mDirectorio1;
-mutex mDirectorio2;
-mutex mDirectorio3;
+ pthread_mutex_t  mDirectorio1;
+ pthread_mutex_t  mDirectorio2;
+ pthread_mutex_t  mDirectorio3;
 
 // booleano que simula semaforo para el ingreso a Directorio true = directoro libre, false = directorio ocupado
 bool DirDisponible[3];
@@ -390,6 +397,304 @@ void falloCache(int id_bloque, int direccion, int seccion, int id_hilo) {
     }
 }
 
+// Método que trae al caché del respectivo CPU los bloques que den un fallo de caché para LW, SC, SW, LL
+void falloCacheDatos(int id_bloque, int direccion, int seccion, int id_hilo) {
+    switch (id_hilo)
+      {
+         case 1:{
+            
+            if(id_bloque < 8){
+                for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    cacheDatos1[seccion][a] = memDatos1[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                    direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                    //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+                cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
+            
+                for(int a = 0; a < 16; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+            }else{
+                if(id_bloque < 16) {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                      cacheDatos1[seccion][a] = memDatos2[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                      direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                      //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                    }
+                    cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
+                }else{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos1[seccion][a] = memDatos3[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                        //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                    }
+                    cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
+                }
+                for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+            }
+            
+            break;
+         }
+         case 2:{
+            if(id_bloque > 7 && id_bloque < 16){
+                for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    cacheDatos2[seccion][a] = memDatos2[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                    direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                    //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+                cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
+            
+                for(int a = 0; a < 16; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+            }else{
+                if(id_bloque < 8) {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                      cacheDatos2[seccion][a] = memDatos1[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                      direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                      //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                    }
+                    cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
+                }else{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos2[seccion][a] = memDatos3[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                        //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                    }
+                    cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
+                }
+                for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+            }
+            break;
+         }
+         case 3:{
+            if(id_bloque > 15){
+                for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    cacheDatos3[seccion][a] = memDatos3[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                    direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                    //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+                cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
+            
+                for(int a = 0; a < 16; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+            }else{
+                if(id_bloque < 7) {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                      cacheDatos3[seccion][a] = memDatos1[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                      direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                      //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                    }
+                    cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
+                }else{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos3[seccion][a] = memDatos2[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                        //pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                    }
+                    cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
+                }
+                for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                }
+            }
+            break;
+         }
+    }
+}
+
+// Método que guarda el dato de la caché del respectivo CPU a memoria para LW, SC, SW, LL
+void guardaCacheDatosMem(int id_bloque, int direccion, int seccion, int id_cache) {
+    switch (id_cache)
+      {
+         case 1:{
+            if(id_bloque < 8){
+                for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    memDatos1[direccion] = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                    direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                 }
+                 for(int a = 0; a < 16; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                 }
+            }else{
+                if(id_bloque < 16) {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        memDatos2[direccion] = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                     }
+                     for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }    
+                } else {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        memDatos3[direccion] = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                     }
+                     for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                }
+            }
+           
+            break;
+         }
+         case 2:{
+            if(id_bloque < 8){
+                for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    memDatos1[direccion] = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                    direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                 }
+                 for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                 }
+            }else{
+                if(id_bloque < 16) {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        memDatos2[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                     }
+                     for(int a = 0; a < 16; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }    
+                } else {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        memDatos3[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                     }
+                     for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                }
+            }
+            break;
+         }
+         case 3:{
+            if(id_bloque < 8){
+                for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    memDatos1[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                    direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                 }
+                 for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                    pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                 }
+            }else{
+                if(id_bloque < 16) {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        memDatos2[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                     }
+                     for(int a = 0; a < 32; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }    
+                } else {
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        memDatos3[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                     }
+                     for(int a = 0; a < 16; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                }
+            }
+            break;
+         }
+    }
+}
+
+// Método que guarda el dato de la caché del respectivo CPU a memoria para LW, SC, SW, LL
+void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int id_cache) {
+    switch (id_cacheDestino)
+      {
+         case 1:{
+            switch (id_cacheRemota)
+             {
+                 case 2:{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos1[seccion][a]; = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                     }
+                     for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                    break;
+                 }
+                 case 3:{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos1[seccion][a]; = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                     }
+                     for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                    break;
+                 }
+            }    
+            break;
+         }
+         case 2:{
+            switch (id_cacheRemota)
+             {
+                 case 1:{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos2[seccion][a]; = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                     }
+                     for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                    break;
+                 }
+                 case 3:{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos2[seccion][a]; = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                     }
+                     for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                    break;
+                 }
+            }
+            break;
+         }
+         case 3:{
+            switch (id_cacheRemota)
+             {
+                 case 1:{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos3[seccion][a]; = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                     }
+                     for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                    break;
+                 }
+                 case 2:{
+                    for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        cacheDatos3[seccion][a]; = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                     }
+                     for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
+                        pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
+                     }
+                    break;
+                 }
+                 
+            }
+            break;
+         }
+    }
+}
+
 vector<int> buscarBloque(int id_hilo) {
     int bloque; //Bloque que se va a buscar PC/16
     int palabra; //número de palabra del bloque PC%16
@@ -679,45 +984,142 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                     
                     dir = reg1[palabra[1]] + palabra[3];
                     bloque = dir/16; 
-                    palabra = dir%16;
+                    palabraInterna = dir%16;
                     seccion = bloque%4;  
-                    while(pasoInseguro)
-                        if(mCacheDatos1.try_lock()){
-                            if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] == 0)){
-                                   reg1[2] = cacheDatos1[seccion][palabraInterna];
+                    while(pasoInseguro){
+                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                            if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] != 2)){ //si el bloque esta en la cache o el estado es M o C se lee la palabra directamene
+                                   //reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
+                                   pasoInseguro = false;
                             }else{
-                                switch (bloque) {
-                                case 1:{
-                                    
-                                    break;
+                                if(bloque < 7){ //si el numero de bloque es menor que 7 esta en la memoria del CPU1
+                                    if(pthread_mutex_trylock(&mDirectorio1) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio1[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio1[bloque][1] == 2){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos1);
+                                    }
+                                }else{
+                                    if(bloque < 15){ //si el numero de bloque esta entre que 8 y 15 esta en la memoria del CPU2
+                                        if(pthread_mutex_trylock(&mDirectorio2) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio2[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio1[bloque][1] == 2){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio2);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio2);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos1);
+                                    }
+                                    }else{ //si el numero de bloque es mayor a 15 esta en la memoria del CPU2
+                                        if(pthread_mutex_trylock(&mDirectorio3) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio1[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio1[bloque][1] == 2){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio3);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio3);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos1);
+                                    }
+                                    }
                                 }
-                                case 2:{
-                                    
-                                    break;
-                                }
-                                case 3:{
-                                    
-                                    break;
-                                }
-                            }
                             }
                         }
-                    
-                    
+                    }
+                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
                     break;
                 }
                 case 2:{
-                    int bloque, palabra, dir;
+                    /*int bloque, palabra, dir;
                     dir = reg2[palabra[1]] + palabra[3];
                     bloque = dir/16; 
-                    palabra = dir%16;
+                    palabra = dir%16;*/
                     break;
                 }
                 case 3:{
-                    int bloque, palabra, dir;
+                    /*int bloque, palabra, dir;
                     dir = reg3[palabra[1]] + palabra[3];
                     bloque = dir/16; 
-                    palabra = dir%16;
+                    palabra = dir%16;*/
                     break;
                 }
             }
@@ -816,7 +1218,7 @@ void cargarHilos(int hilos){
     d = opendir(".");
     if (d)
     {
-        while (((dir = readdir(d)) != NULL) && (contHilos < hilos)) // Recorre la cantidad de hilos que se le asignó al iniciar el programa
+        while (((dir = readdir(d)) != NULL) && (contHilos < hilos)) // Recorre la cantidad de hilos que se le asign�� al iniciar el programa
         {
             p1=strtok(dir->d_name,".");
             p2=strtok(NULL,".");
@@ -948,6 +1350,13 @@ int main (int argc, char** argv) {
     cargarHilos(subHilos);
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum; // Se guarda le quantum global que se usará en el programa
+    
+    pthread_mutex_init(&mCacheDatos1, NULL);
+    pthread_mutex_init(&mCacheDatos2, NULL);
+    pthread_mutex_init(&mCacheDatos3, NULL);
+    pthread_mutex_init(&mDirectorio1, NULL);
+    pthread_mutex_init(&mDirectorio2, NULL);
+    pthread_mutex_init(&mDirectorio3, NULL);
     
     quantum1 = quantum;
     quantum2 = quantum;
