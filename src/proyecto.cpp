@@ -68,9 +68,9 @@ int cacheDatos2[4][6];
 int cacheDatos3[4][6];
 
 // Mutex para el uso de caches
- pthread_mutex_t  mCacheDatos1;
- pthread_mutex_t  mCacheDatos2;
- pthread_mutex_t  mCacheDatos3;
+pthread_mutex_t  mCacheDatos1;
+pthread_mutex_t  mCacheDatos2;
+pthread_mutex_t  mCacheDatos3;
 
 // booleano que simula semaforo para el ingreso a cache true = cache libre, false = cache ocupado
 bool cacheDisponible[3];
@@ -89,9 +89,9 @@ int directorio2[8][4];
 int directorio3[8][4];
 
 // Mutex para el uso de directorios
- pthread_mutex_t  mDirectorio1;
- pthread_mutex_t  mDirectorio2;
- pthread_mutex_t  mDirectorio3;
+pthread_mutex_t  mDirectorio1;
+pthread_mutex_t  mDirectorio2;
+pthread_mutex_t  mDirectorio3;
 
 // booleano que simula semaforo para el ingreso a Directorio true = directoro libre, false = directorio ocupado
 bool DirDisponible[3];
@@ -140,6 +140,15 @@ int RL3;
 int contextos1[4][37];
 int contextos2[4][37];
 int contextos3[4][37];
+
+//Llena las memorias de datos con unos como valor determinado
+void llenaMemDatos() {
+    for(int a = 0; a < 32; a++) {
+        memDatos1[a] = 1;
+        memDatos2[a] = 1;
+        memDatos3[a] = 1;
+    }
+}
 
 // Método que imprime en pantalla el estado de la memoria principal de cada CPU
 void imprimirMemP() {
@@ -616,7 +625,7 @@ void guardaCacheDatosMem(int id_bloque, int direccion, int seccion, int id_cache
 }
 
 // Método que guarda el dato de la caché del respectivo CPU a memoria para LW, SC, SW, LL
-void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int id_cache) {
+void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int id_cacheRemota) {
     switch (id_cacheDestino)
       {
          case 1:{
@@ -624,7 +633,7 @@ void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int 
              {
                  case 2:{
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        cacheDatos1[seccion][a]; = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        cacheDatos1[seccion][a] = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                      }
                      for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
                         pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
@@ -633,7 +642,7 @@ void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int 
                  }
                  case 3:{
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        cacheDatos1[seccion][a]; = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        cacheDatos1[seccion][a] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                      }
                      for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
                         pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
@@ -648,7 +657,7 @@ void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int 
              {
                  case 1:{
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        cacheDatos2[seccion][a]; = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        cacheDatos2[seccion][a] = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                      }
                      for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
                         pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
@@ -657,7 +666,7 @@ void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int 
                  }
                  case 3:{
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        cacheDatos2[seccion][a]; = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        cacheDatos2[seccion][a] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                      }
                      for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
                         pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
@@ -672,7 +681,7 @@ void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int 
              {
                  case 1:{
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        cacheDatos3[seccion][a]; = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        cacheDatos3[seccion][a] = cacheDatos1[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                      }
                      for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
                         pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
@@ -681,7 +690,7 @@ void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int 
                  }
                  case 2:{
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        cacheDatos3[seccion][a]; = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        cacheDatos3[seccion][a] = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                      }
                      for(int a = 0; a < 20; a++) { // Simulación de los 16 ciclos del fallo de caché
                         pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
@@ -769,6 +778,307 @@ vector<int> buscarBloque(int id_hilo) {
     }
     
     return plb;
+}
+
+//metodo que actualiza directorios para SW
+void actualizaDirSW(int bloque, int id_hilo){
+    if(bloque < 8){
+        directorio1[bloque][0] = 1;
+        for(int i = 0; i < 3; i++){
+            if(i == id_hilo){
+                directorio1[bloque][i] = 1;
+            }else{
+                directorio1[bloque][i] = 0;
+            }
+        }
+    }else{
+        if(bloque < 16){
+            directorio2[bloque][0] = 1;
+            for(int i = 0; i < 3; i++){
+                if(i == id_hilo){
+                    directorio2[bloque][i] = 1;
+                }else{
+                    directorio2[bloque][i] = 0;
+                }
+            }   
+        }else{
+            directorio3[bloque][0] = 1;
+            for(int i = 0; i < 3; i++){
+                if(i == id_hilo){
+                    directorio3[bloque][i] = 1;
+                }else{
+                    directorio3[bloque][i] = 0;
+                }
+            }
+        }
+    }
+}
+
+// Metodo que se encarga de liberar los recursos que se hayan adquirido
+vector<int> liberarRecursos(vector<int> recursos) {
+    if(recursos[1]== 1) {
+        pthread_mutex_unlock(&mCacheDatos1);
+        recursos[1]= 0;
+    }
+    if(recursos[2]== 1) {
+        pthread_mutex_unlock(&mCacheDatos2);
+        recursos[2]= 0;
+    }
+    if(recursos[3]== 1) {
+        pthread_mutex_unlock(&mCacheDatos3);
+        recursos[3]= 0;
+    }
+    if(recursos[4]== 1) {
+        pthread_mutex_unlock(&mDirectorio1);
+        recursos[4]= 0;
+    }
+    if(recursos[5]== 1) {
+        pthread_mutex_unlock(&mDirectorio2);
+        recursos[5]= 0;
+    }
+    if(recursos[6]== 1) {
+        pthread_mutex_unlock(&mDirectorio3);
+        recursos[6]= 0;
+    }
+
+}
+
+
+// Metodo para realizar el SW con todos sus casos
+void storeWord(int id_hilo, vector<int> palabra) {
+    bool siga = true;
+    // Vector para los recursos
+    
+    /*  mlocks[1] - mlocks[2] - mlocks[3] = caches 1, 2 y 3 respectivamente
+        mlocks[4] - mlocks[5] - mlocks[6] = directorios 1, 2 y 3 respectivamente
+    */
+    vector<int> mLocks (7);
+    
+    dir = reg1[palabra[1]] + palabra[3]; 
+    bloque = dir/16;
+    palabraBloque = dir%16;
+    seccion = bloque%4; 
+    dir = dir / 4;
+    switch (id_hilo) {
+        // estado 0 = "C", 1 = "M", 2 = "I"
+        case 1:{
+            while(siga){
+                if(pthread_mutex_trylock(&mCacheDatos1) == 0) { 
+                       mlocks[1] = 1;
+                       if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] == 1)){ //cuando el bloque esta en cache y estado "M"
+                           
+                           cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                           mlocks = liberarRecursos(mlocks);
+                           siga = false;
+                       }
+                }else{
+                    if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] == 0)){ //cuando el bloque esta en cache y estado "C"
+                        if(bloque < 8){ //si el bloque est en directorio1
+                            
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){
+                                mlocks[4] = 1;
+                                if(directorio1[bloque][2] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                       mlocks[1] = 1;
+                                       cacheDatos2[seccion][5] = 2;
+                                       directorio1[bloque][2] = 0;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                }
+                                if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                    if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[3] = 1;
+                                       cacheDatos3[seccion][5] = 2;
+                                       directorio1[bloque][3] = 0;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                }
+                                
+                                directorio1[bloque][0] = 1;
+                                directorio1[bloque][1] = 1;
+                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                                mLocks = liberarRecursos(mlocks);
+                                siga = false;
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }else{
+                            if(bloque < 16){ //si el bloque está en el directorio2
+                                if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                    if(directorio2[bloque][2] = 1){
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                           cacheDatos2[seccion][5] = 2;
+                                           directorio1[bloque][2] = 0;
+                                        }else{
+                                            pthread_mutex_unlock(&mCacheDatos1);
+                                            pthread_mutex_unlock(&mDirectorio2);
+                                        }
+                                    }else{ 
+                                        if(directorio2[bloque][3] = 1){
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                               cacheDatos3[seccion][5] = 2;
+                                               directorio1[bloque][3] = 0;
+                                            }else{
+                                                pthread_mutex_unlock(&mCacheDatos1);
+                                                pthread_mutex_unlock(&mDirectorio2);
+                                            }
+                                        }
+                                    }
+                                    directorio2[bloque][0] = 1;
+                                    directorio2[bloque][1] = 1;
+                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                                    pthread_mutex_unlock(&mCacheDatos1);
+                                    pthread_mutex_unlock(&mDirectorio2);
+                                    pthread_mutex_unlock(&mCacheDatos2); //esto puede fallar
+                                    pthread_mutex_unlock(&mCacheDatos3); //esto puede fallar
+                                    siga = false;
+                                }else{
+                                    pthread_mutex_unlock(&mCacheDatos1);    
+                                }
+                            }else { //si el bloque est en directorio3
+                                if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                    if(directorio3[bloque][2] = 1){
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                           cacheDatos2[seccion][5] = 2;
+                                           directorio1[bloque][2] = 0;
+                                        }else{
+                                            pthread_mutex_unlock(&mCacheDatos1);
+                                            pthread_mutex_unlock(&mDirectorio3);
+                                        }
+                                    }else{
+                                        if(directorio3[bloque][3] = 1){
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                               cacheDatos3[seccion][5] = 2;
+                                               directorio1[bloque][3] = 0;
+                                            }else{
+                                                pthread_mutex_unlock(&mCacheDatos1);
+                                                pthread_mutex_unlock(&mDirectorio3);
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    pthread_mutex_unlock(&mCacheDatos1);    
+                                }
+                                directorio3[bloque][0] = 1;
+                                directorio3[bloque][1] = 1;
+                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                                pthread_mutex_unlock(&mCacheDatos1);
+                                pthread_mutex_unlock(&mDirectorio3);
+                                pthread_mutex_unlock(&mCacheDatos2); //esto puede fallar
+                                pthread_mutex_unlock(&mCacheDatos3); //esto puede fallar
+                                siga = false;
+                            }
+                    }
+                }else{ // si el bloque no esta en la cache o si esta invalido
+                    if(bloque < 8){ //si el bloque est en directorio1
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){ 
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio1[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio1[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio1[bloque][1] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                                    pthread_mutex_unlock(&mCacheDatos1);
+                                    pthread_mutex_unlock(&mDirectorio3);
+                                    siga = false;
+                                }else{
+                                    if(directorio1[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio1[bloque][2] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                               cacheDatos2[seccion][5] = 2;
+                                               directorio1[bloque][2] = 0;
+                                            }else{
+                                                pthread_mutex_unlock(&mCacheDatos1);
+                                                pthread_mutex_unlock(&mDirectorio1);
+                                            }
+                                        }else{
+                                            if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                   cacheDatos3[seccion][5] = 2;
+                                                   directorio1[bloque][3] = 0;
+                                                }else{
+                                                    pthread_mutex_unlock(&mCacheDatos1);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }
+                                            }
+                                        }
+                                        directorio1[bloque][0] = 1;
+                                        directorio1[bloque][1] = 1;
+                                        cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                                        pthread_mutex_unlock(&mCacheDatos1);
+                                        pthread_mutex_unlock(&mDirectorio1);
+                                        pthread_mutex_unlock(&mCacheDatos2); //esto puede fallar
+                                        pthread_mutex_unlock(&mCacheDatos3); //esto puede fallar
+                                        siga = false;
+                                    }
+                                }
+                            }else{
+                                pthread_mutex_unlock(&mCacheDatos1);    
+                            }
+                        }else{
+                            if(bloque < 16){ //si el bloque está en el directorio2
+                                if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                    if(directorio2[bloque][2] = 1){
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                           cacheDatos2[seccion][5] = 2;
+                                        }else{
+                                            pthread_mutex_unlock(&mCacheDatos1);
+                                            pthread_mutex_unlock(&mDirectorio2);
+                                        }
+                                    }else{ 
+                                        if(directorio2[bloque][3] = 1){
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                               cacheDatos3[seccion][5] = 2;
+                                            }else{
+                                                pthread_mutex_unlock(&mCacheDatos1);
+                                                pthread_mutex_unlock(&mDirectorio2);
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    pthread_mutex_unlock(&mCacheDatos1);    
+                                }
+                            }else { //si el bloque est en directorio3
+                                if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                    if(directorio3[bloque][2] = 1){
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                           cacheDatos2[seccion][5] = 2;
+                                        }else{
+                                            pthread_mutex_unlock(&mCacheDatos1);
+                                            pthread_mutex_unlock(&mDirectorio3);
+                                        }
+                                    }else{
+                                        if(directorio3[bloque][3] = 1){
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                               cacheDatos3[seccion][5] = 2;
+                                            }else{
+                                                pthread_mutex_unlock(&mCacheDatos1);
+                                                pthread_mutex_unlock(&mDirectorio3);
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    pthread_mutex_unlock(&mCacheDatos1);    
+                                }
+                            }
+                    }
+                }    
+            }
+            break;
+         }
+        case 2:{
+            
+            break;
+        }
+        case 3:{
+            
+            break;
+        }
+    }
+    break;
 }
 
 // Método que procesa la palabra con su respectiva instrucción
@@ -971,6 +1281,7 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             }
             break;
         }
+        
         /*****************************************/
         /* REALIZAR EL LOAD PARA HABLAR EL JUEVES*/
         /*****************************************/
@@ -983,29 +1294,77 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                     bool pasoInseguro = true;
                     
                     dir = reg1[palabra[1]] + palabra[3];
-                    bloque = dir/16; 
+                    bloque = dir/16;
                     palabraInterna = dir%16;
+                    dir = dir / 4;
                     seccion = bloque%4;  
                     while(pasoInseguro){
                         if(pthread_mutex_trylock(&mCacheDatos1) == 0){
                             if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] != 2)){ //si el bloque esta en la cache o el estado es M o C se lee la palabra directamene
-                                   //reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
+                                   reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
                                    pasoInseguro = false;
+                                   pthread_mutex_unlock(&mCacheDatos1); // libera cache1
                             }else{
+                                
                                 if(bloque < 7){ //si el numero de bloque es menor que 7 esta en la memoria del CPU1
                                     if(pthread_mutex_trylock(&mDirectorio1) == 0){ //se trata de bloquear el directorio 1
                                         // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(cacheDatos1[seccion][5] == 1){ //si el dato de la cache al que se le va a caer encima esta modificado este lo guarda
+                                    
+                                            if(cacheDatos1[seccion][4] < 8){
+                                                guardaCacheDatosMem(cacheDatos1[seccion][4], dir, seccion, 1); // Guarda en memoria el dato para no perder la información
+                                                directorio1[bloque][0] = 2; //pone compartido el bloque que se esta trayendo de memoria
+                                                directorio1[bloque][1] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            }else{
+                                                if(cacheDatos1[seccion][4] < 16){
+                                                    if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                                        guardaCacheDatosMem(cacheDatos1[seccion][4], dir, seccion, 1); // Guarda en memoria el dato para no perder la información
+                                                        directorio2[bloque][0] = 2; //pone compartido el bloque que se esta trayendo de memoria
+                                                        directorio2[bloque][1] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                        
+                                                    }else{
+                                                        pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                        pthread_mutex_unlock(&mDirectorio1); //libera direcorio
+                                                    }
+                                                } else {
+                                                    if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                                        guardaCacheDatosMem(cacheDatos11[seccion][4], dir, seccion, 1); // Guarda en memoria el dato para no perder la información
+                                                        directorio3[bloque][0] = 2; //pone compartido el bloque que se esta trayendo de memoria
+                                                        directorio3[bloque][1] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                        
+                                                    } else {
+                                                        pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                        pthread_mutex_unlock(&mDirectorio1); //libera direcorio
+                                                    }
+                                                }
+                                            }
+                                            
+                                        }
                                         if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
                                             falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
                                             directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
                                             directorio1[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio1); //libera direcorio
                                             pasoInseguro = false;
                                             
                                         }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
-                                            if(directorio1[bloque][1] == 2){ //el bloque este modificaco en cache cpu2
+                                            if(directorio1[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
                                                 if(pthread_mutex_trylock(&mCacheDatos2) == 0){
                                                     
                                                     //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2);
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 2);
+                                                    directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio1[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio1); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos2); // libera Cache
                                                     pasoInseguro = false;
                                                     
                                                 }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
@@ -1016,6 +1375,16 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                                                 if(pthread_mutex_trylock(&mCacheDatos3) == 0){
                                                     
                                                     //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3);
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 3);
+                                                    directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio1[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio1); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos3); // libera Cache
                                                     pasoInseguro = false;
                                                     
                                                 }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
@@ -1029,20 +1398,37 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                                     }
                                 }else{
                                     if(bloque < 15){ //si el numero de bloque esta entre que 8 y 15 esta en la memoria del CPU2
+                                        dir = dir - 32; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        bloque = bloque - 8; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        
                                         if(pthread_mutex_trylock(&mDirectorio2) == 0){ //se trata de bloquear el directorio 1
                                         // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
-                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                        if(directorio2[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
                                             
                                             falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
                                             directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
                                             directorio2[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio2); //libera direcorio
                                             pasoInseguro = false;
                                             
                                         }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
-                                            if(directorio1[bloque][1] == 2){ //el bloque este modificaco en cache cpu2
+                                            if(directorio2[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
                                                 if(pthread_mutex_trylock(&mCacheDatos2) == 0){
                                                     
                                                     //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2);
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 2);
+                                                    directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio2[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio2); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos2); // libera Cache
                                                     pasoInseguro = false;
                                                     
                                                 }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
@@ -1053,6 +1439,16 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                                                 if(pthread_mutex_trylock(&mCacheDatos3) == 0){
                                                     
                                                     //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3);
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 3);
+                                                    directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio2[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio2); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos3); // libera Cache
                                                     pasoInseguro = false;
                                                     
                                                 }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
@@ -1064,21 +1460,37 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                                     }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
                                         pthread_mutex_unlock(&mCacheDatos1);
                                     }
-                                    }else{ //si el numero de bloque es mayor a 15 esta en la memoria del CPU2
+                                    }else{ //si el numero de bloque es mayor a 15 esta en la memoria del CPU3
+                                        dir = dir - 64; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        bloque = bloque - 16;// Se resta la dirección para que coincida con los tamaños de la cache datos
                                         if(pthread_mutex_trylock(&mDirectorio3) == 0){ //se trata de bloquear el directorio 1
                                         // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
-                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                        if(directorio3[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
                                             
                                             falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
-                                            directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
-                                            directorio1[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio3[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio3); //libera direcorio
                                             pasoInseguro = false;
                                             
                                         }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
-                                            if(directorio1[bloque][1] == 2){ //el bloque este modificaco en cache cpu2
+                                            if(directorio3[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
                                                 if(pthread_mutex_trylock(&mCacheDatos2) == 0){
                                                     
                                                     //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2);
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 2);
+                                                    directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio3[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
                                                     pasoInseguro = false;
                                                     
                                                 }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
@@ -1089,6 +1501,16 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                                                 if(pthread_mutex_trylock(&mCacheDatos3) == 0){
                                                     
                                                     //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3);
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 3);
+                                                    directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio3[bloque][1] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
                                                     pasoInseguro = false;
                                                     
                                                 }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
@@ -1105,21 +1527,421 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                             }
                         }
                     }
-                    reg1[palabra[2]] = cacheDatos1[seccion][palabraInterna];
                     break;
                 }
                 case 2:{
-                    /*int bloque, palabra, dir;
+                    int bloque, palabraInterna, dir, seccion;
+                    bool pasoInseguro = true;
+                    
                     dir = reg2[palabra[1]] + palabra[3];
-                    bloque = dir/16; 
-                    palabra = dir%16;*/
+                    bloque = dir/16;  
+                    dir = dir / 4;
+                    palabraInterna = dir%16;
+                    seccion = bloque%4;  
+                    while(pasoInseguro){
+                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                            if((cacheDatos2[seccion][4] == bloque) && (cacheDatos2[seccion][5] != 2)){ //si el bloque esta en la cache o el estado es M o C se lee la palabra directamene
+                                   reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna];
+                                   pasoInseguro = false;
+                                   pthread_mutex_unlock(&mCacheDatos2); // libera cache1
+                            }else{
+                                if(bloque < 7){ //si el numero de bloque es menor que 7 esta en la memoria del CPU1
+                                    if(pthread_mutex_trylock(&mDirectorio1) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio1[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio1); //libera direcorio
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio1[bloque][1] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1);
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 1);
+                                                    directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio1[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio1); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos1); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos2);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3);
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 3);
+                                                    directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio1[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio1); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos3); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos2);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos2);
+                                    }
+                                }else{
+                                    if(bloque < 15){ //si el numero de bloque esta entre que 8 y 15 esta en la memoria del CPU2
+                                        dir = dir - 32; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        bloque = bloque - 8; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        if(pthread_mutex_trylock(&mDirectorio2) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio2[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio2[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio2); //libera direcorio
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio2[bloque][1] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1);
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 1);
+                                                    directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio2[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio2); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos1); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos2);
+                                                    pthread_mutex_unlock(&mDirectorio2);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3);
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 3);
+                                                    directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio2[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio2); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos3); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos2);
+                                                    pthread_mutex_unlock(&mDirectorio2);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos2);
+                                    }
+                                    }else{ //si el numero de bloque es mayor a 15 esta en la memoria del CPU3
+                                        dir = dir - 64; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        bloque = bloque - 16; // Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        if(pthread_mutex_trylock(&mDirectorio3) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio3[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio3[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio3[bloque][1] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1);
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 1);
+                                                    directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio3[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg2[palabra[2]] = cacheDatos1[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos2);
+                                                    pthread_mutex_unlock(&mDirectorio3);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3);
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 3);
+                                                    directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio3[bloque][2] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg2[palabra[2]] = cacheDatos2[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos2);
+                                                    pthread_mutex_unlock(&mDirectorio3);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos2);
+                                    }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     break;
                 }
                 case 3:{
-                    /*int bloque, palabra, dir;
+                    int bloque, palabraInterna, dir, seccion;
+                    bool pasoInseguro = true;
+                    
                     dir = reg3[palabra[1]] + palabra[3];
-                    bloque = dir/16; 
-                    palabra = dir%16;*/
+                    bloque = dir/16;  
+                    dir = dir / 4;
+                    palabraInterna = dir%16;
+                    seccion = bloque%4;  
+                    while(pasoInseguro){
+                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                            if((cacheDatos3[seccion][4] == bloque) && (cacheDatos3[seccion][5] != 2)){ //si el bloque esta en la cache o el estado es M o C se lee la palabra directamene
+                                   reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna];
+                                   pasoInseguro = false;
+                                   pthread_mutex_unlock(&mCacheDatos3); // libera cache1
+                            }else{
+                                if(bloque < 7){ //si el numero de bloque es menor que 7 esta en la memoria del CPU1
+                                    
+                                    if(pthread_mutex_trylock(&mDirectorio1) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio1[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio1[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio1); //libera direcorio
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio1[bloque][1] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1);
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 1);
+                                                    directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio1[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio1); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos1); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos3);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2);
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 2);
+                                                    directorio1[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio1[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio1); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos2); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos3);
+                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos3);
+                                    }
+                                }else{
+                                    if(bloque < 15){ //si el numero de bloque esta entre que 8 y 15 esta en la memoria del CPU2
+                                    dir = dir - 32;// Se resta la dirección para que coincida con los tamaños de la cache datos
+                                    bloque = bloque - 8;// Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        if(pthread_mutex_trylock(&mDirectorio2) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio2[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio2[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio2); //libera direcorio
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio2[bloque][1] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1);
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 1);
+                                                    directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio2[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio2); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos1); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos3);
+                                                    pthread_mutex_unlock(&mDirectorio2);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2);
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 2);
+                                                    directorio2[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio2[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio2); // libera directorio
+                                                    pthread_mutex_unlock(&mCacheDatos2); // libera Cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos3);
+                                                    pthread_mutex_unlock(&mDirectorio2);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos3);
+                                    }
+                                    }else{ //si el numero de bloque es mayor a 15 esta en la memoria del CPU3
+                                        dir = dir - 64;// Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        bloque = bloque - 16;// Se resta la dirección para que coincida con los tamaños de la cache datos
+                                        if(pthread_mutex_trylock(&mDirectorio3) == 0){ //se trata de bloquear el directorio 1
+                                        // estadodirectorios 0 = "C", 1 = "M", 2 = "U" 
+                                        if(directorio3[bloque][0] != 1){ //si el bloque esta compartido o uncached se trae de memoria
+                                            
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo); //se trae el dato de memoria
+                                            directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                            directorio3[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                            cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                            reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna];
+                                            pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                            pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                            pasoInseguro = false;
+                                            
+                                        }else{ //si el bloque esta modificado hay que traerlo de la cache del que tiene el dato modificado
+                                            if(directorio3[bloque][1] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 2
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1);
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 1);
+                                                    directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio3[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos1[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                                    pthread_mutex_unlock(&mCacheDatos1); //libera cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos3);
+                                                    pthread_mutex_unlock(&mDirectorio3);
+                                                }    
+                                            }else{//el bloque este modificaco en cache cpu3
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    
+                                                    //se guardan los datos a memoria y se traen a la cache 3
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2);
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 2);
+                                                    directorio3[bloque][0] = 0; //pone compartido el bloque que se esta trayendo de memoria
+                                                    directorio3[bloque][3] = 1; //pone compartido el bloque que se esta trayendo de memoria
+                                                    cacheDatos3[seccion][5] = 0; // se pone compartido el bloque en la cache de datos
+                                                    cacheDatos2[seccion][5] = 0; // se pone compartido el bloque en la cache de datos donde estaba el dato modificaco
+                                                    reg3[palabra[2]] = cacheDatos3[seccion][palabraInterna]; // se carga la palabra al registro
+                                                    pthread_mutex_unlock(&mCacheDatos3); //libera cache
+                                                    pthread_mutex_unlock(&mDirectorio3); //libera direcorio
+                                                    pthread_mutex_unlock(&mCacheDatos2); //libera cache
+                                                    pasoInseguro = false;
+                                                    
+                                                }else{  //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                                    pthread_mutex_unlock(&mCacheDatos3);
+                                                    pthread_mutex_unlock(&mDirectorio3);
+                                                }
+                                            }
+                                        }
+                                    }else{ //como no se obtiene el recurso se libera lo que estaba siendo usado
+                                        pthread_mutex_unlock(&mCacheDatos3);
+                                    }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     break;
                 }
             }
@@ -1128,21 +1950,8 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
         case 43:{
             // SW; RX, n(RY) M(n + (Ry)) <-- Rx
             // NOTA 1: FALTA EDITAR TODO A PARTIR DE AQUI
-            switch (id_hilo) {
-                case 1:{
-                    
-                    
-                    break;
-                }
-                case 2:{
-                    
-                    break;
-                }
-                case 3:{
-                    
-                    break;
-                }
-            }
+            storeWord(id_hilo, palabra); // Llama al método que tiene toda la lógica del SW
+            
             break;
         }
         case 63:{
@@ -1231,7 +2040,6 @@ void cargarHilos(int hilos){
                     strcat (p1,".txt"); // Agregamos la extensión
                 	ifstream file(p1);
                     string str; 
-                    
                         switch (procesador) {
                             
                         case 1:{
@@ -1348,9 +2156,11 @@ int main (int argc, char** argv) {
     cout << "Por favor digite el número de hilos tendrá el programa:" << endl;
     cin >> subHilos; // Se guarda el número de hilos que el programa va a ejecutar
     cargarHilos(subHilos);
+    
+    llenaMemDatos();
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum; // Se guarda le quantum global que se usará en el programa
-    
+    //imprimirMemP();
     pthread_mutex_init(&mCacheDatos1, NULL);
     pthread_mutex_init(&mCacheDatos2, NULL);
     pthread_mutex_init(&mCacheDatos3, NULL);
