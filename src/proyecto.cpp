@@ -128,6 +128,10 @@ int RL1;
 int RL2;
 int RL3;
 
+pthread_mutex_t  mRL1;
+pthread_mutex_t  mRL2;
+pthread_mutex_t  mRL3;
+
 //Estructura de datos para los contextos
 /*
     Estructura:
@@ -780,38 +784,27 @@ vector<int> buscarBloque(int id_hilo) {
     return plb;
 }
 
-//metodo que actualiza directorios para SW
-void actualizaDirSW(int bloque, int id_hilo){
-    if(bloque < 8){
-        directorio1[bloque][0] = 1;
-        for(int i = 0; i < 3; i++){
-            if(i == id_hilo){
-                directorio1[bloque][i] = 1;
-            }else{
-                directorio1[bloque][i] = 0;
-            }
-        }
-    }else{
-        if(bloque < 16){
-            directorio2[bloque][0] = 1;
-            for(int i = 0; i < 3; i++){
-                if(i == id_hilo){
-                    directorio2[bloque][i] = 1;
-                }else{
-                    directorio2[bloque][i] = 0;
-                }
-            }   
-        }else{
-            directorio3[bloque][0] = 1;
-            for(int i = 0; i < 3; i++){
-                if(i == id_hilo){
-                    directorio3[bloque][i] = 1;
-                }else{
-                    directorio3[bloque][i] = 0;
-                }
-            }
+
+
+// Metodo que se encarga de reservar caches
+bool reservarCache(int cache) {
+    bool resultado= false;
+    if(cache == 1) {
+        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+            resultado = true;
         }
     }
+    if(cache == 2) {
+        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+            resultado = true;
+        }
+    }
+    if(cache == 3) {
+        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+            resultado = true;
+        }
+    }
+    return resultado;
 }
 
 // Metodo que se encarga de liberar los recursos que se hayan adquirido
@@ -840,18 +833,1034 @@ vector<int> liberarRecursos(vector<int> recursos) {
         pthread_mutex_unlock(&mDirectorio3);
         recursos[6]= 0;
     }
+    return recursos;
+}
 
+//Metodo que dice si el dato esta en cache
+bool estaCache(int cache, int seccion, int bloque){
+    bool esta = false;
+    switch (cache) {
+        case 1:{                            
+            if(cacheDatos1[seccion][4] == bloque){
+                esta = true;
+            }
+            break;
+        }
+        case 2:{                            
+            if(cacheDatos2[seccion][4] == bloque){
+                esta = true;
+            }
+            break;
+        }
+        case 3:{                            
+            if(cacheDatos3[seccion][4] == bloque){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
+}
+
+//Metodo que dice si el dato esta compartido en cache
+bool estaCompartido(int cache, int seccion){
+    bool esta = false;
+    switch (cache) {
+        case 1:{                            
+            if(cacheDatos1[seccion][5] == 0){
+                esta = true;
+            }
+            break;
+        }
+        case 2:{                            
+            if(cacheDatos2[seccion][5] == 0){
+                esta = true;
+            }
+            break;
+        }
+        case 3:{                            
+            if(cacheDatos3[seccion][5] == 0){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
+}
+
+//Metodo que dice si el dato esta modificado en cache
+bool estaModificado(int cache, int seccion){
+    bool esta = false;
+    switch (cache) {
+        case 1:{                           
+            if(cacheDatos1[seccion][5] == 1){
+                esta = true;
+            }
+            break;
+        }
+        case 2:{                            
+            if(cacheDatos2[seccion][5] == 1){
+                esta = true;
+            }
+            break;
+        }
+        case 3:{                          
+            if(cacheDatos3[seccion][5] == 1){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
+}
+
+//Metodo que dice si el dato esta invalido en cache
+bool estaInvalido(int cache, int seccion){
+    bool esta = false;
+    switch (cache) {
+        case 1:{                            
+            if(cacheDatos1[seccion][5] == 2){
+                esta = true;
+            }
+            break;
+        }
+        case 2:{                        
+            if(cacheDatos2[seccion][5] == 2){
+                esta = true;
+            }
+            break;
+        }
+        case 3:{                       
+            if(cacheDatos3[seccion][5] == 2){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
 }
 
 
-// Metodo para realizar el SW con todos sus casos
+
+//Metodo que dice si el dato esta compartido en directorio
+bool estaCompartidodir(int directorio, int bloque){
+    bool esta = false;
+    switch (directorio) {
+        case 4:{                           
+            if(directorio1[bloque][0] == 0){
+                esta = true;
+            }
+            break;
+        }
+        case 5:{                            
+            if(directorio2[bloque][0] == 0){
+                esta = true;
+            }
+            break;
+        }
+        case 6:{                          
+            if(directorio3[bloque][0] == 0){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
+}
+
+//Metodo que dice si el dato esta modificado en directorio
+bool estaModificadodir(int directorio, int bloque){
+    bool esta = false;
+    switch (directorio) {
+        case 4:{                           
+            if(directorio1[bloque][0] == 1){
+                esta = true;
+            }
+            break;
+        }
+        case 5:{                            
+            if(directorio2[bloque][0] == 1){
+                esta = true;
+            }
+            break;
+        }
+        case 6:{                          
+            if(directorio3[bloque][0] == 1){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
+}
+
+//Metodo que dice si el dato esta uncached en directorio
+bool estaUncacheddir(int directorio, int bloque){
+    bool esta = false;
+    switch (directorio) {
+        case 4:{                            
+            if(directorio1[bloque][0] == 2){
+                esta = true;
+            }
+            break;
+        }
+        case 5:{                        
+            if(directorio2[bloque][0] == 2){
+                esta = true;
+            }
+            break;
+        }
+        case 6:{                       
+            if(directorio3[bloque][0] == 2){
+                esta = true;
+            }
+            break;
+        }
+    }
+    return esta;
+}
+
+//metodo que guarda dato en cache
+void guardarDato(int id_hilo, int seccion, int palabraBloque, int registro){
+    switch (id_hilo) {
+        case 1:{                    
+            cacheDatos1[seccion][palabraBloque] = reg1[registro];
+            break;
+        }
+        case 2:{                            
+            cacheDatos2[seccion][palabraBloque] = reg2[registro];
+            break;
+        }
+        case 3:{                            
+            cacheDatos3[seccion][palabraBloque] = reg3[registro];
+            break;
+        }
+    }
+    
+}
+
+//metodo que lee dato de cache
+void leePalabra(int cache, int seccion, int palabraBloque, int registro){
+    switch (cache) {
+        case 1:{                    
+            reg1[registro] = cacheDatos1[seccion][palabraBloque];
+            break;
+        }
+        case 2:{                            
+            reg2[registro] = cacheDatos2[seccion][palabraBloque];
+            break;
+        }
+        case 3:{                            
+            reg3[registro] = cacheDatos3[seccion][palabraBloque];
+            break;
+        }
+    }
+    
+}
+
+
+
+
+//metodo que dice que directorio esta el bloque
+int directorioBloque(int bloque){
+    int resultado = 0;
+    if(bloque < 8) {                                    //si el bloque esta en dir1
+        resultado = 4;                                  //Retorna 4 porque es la posicion en mlock
+    }else{
+        if(bloque < 16) {                               //si el bloque esta en dir2
+            resultado = 5;                              //Retorna 5 porque es la posicion en mlock
+        }else{                                          //si el bloque esta en dir3
+            resultado = 6;                              //Retorna 6 porque es la posicion en mlock
+        }    
+    }
+    return resultado;
+}
+
+// Metodo que se encarga de reservar directorios
+bool reservarDirectorio(int bloque) {
+    bool resultado= false;
+    if(bloque < 8) {                                    //si el bloque esta en dir1
+        if(pthread_mutex_trylock(&mDirectorio1) == 0){
+            resultado = true;
+        }
+    }else{
+        if(bloque < 16) {                               //si el bloque esta en dir2
+            if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                resultado = true;
+            }
+        }else{                                          //si el bloque esta en dir3
+                if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                    resultado = true;
+                }
+            }    
+        
+    }
+    
+    
+    return resultado;
+}
+
+/*metodo que retorna en que caches esta el bloque
+    0 = ninguna cache
+    1 = si esta en cacheaux1
+    2 = si esta en cacheaux2
+    3 = si esta en ambas
+*/
+int cachesBloque(int directorio, int bloque, int id_hilo){
+    
+    int resultado = 0;
+    switch (directorio) {
+        case 4:{                                                                        //Directorio 1       
+            switch (id_hilo) {
+                case 1:{                                                                //CPU1    
+                    if(directorio1[bloque][2] == 1 && directorio1[bloque][3] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio1[bloque][2] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;  
+                        }else{
+                            if(directorio1[bloque][3] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+                case 2:{                                                                //CPU2
+                    if(directorio1[bloque][1] == 1 && directorio1[bloque][3] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio1[bloque][1] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio1[bloque][3] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+                case 3:{                                                                //CPU3
+                    if(directorio1[bloque][1] == 1 && directorio1[bloque][2] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio1[bloque][1] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio1[bloque][2] == 1){                    //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        case 5:{                                                                        //Directorio 2
+            switch (id_hilo) {
+                case 1:{                                                                    //CPU1
+                    if(directorio2[bloque][2] == 1 && directorio2[bloque][3] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{  
+                        if(directorio2[bloque][2] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio2[bloque][3] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+                case 2:{                                                                //CPU2
+                    if(directorio2[bloque][1] == 1 && directorio2[bloque][3] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio2[bloque][1] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio2[bloque][3] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+                case 3:{                                                                //CPU3
+                    if(directorio2[bloque][1] == 1 && directorio2[bloque][2] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio2[bloque][1] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio2[bloque][2] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        case 6:{                                                                        //Directorio 3
+            switch (id_hilo) {
+                case 1:{                                                                    //CPU1
+                    if(directorio3[bloque][2] == 1 && directorio3[bloque][3] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio3[bloque][2] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio3[bloque][3] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }   
+                case 2:{                                                                //CPU2
+                    if(directorio3[bloque][1] == 1 && directorio3[bloque][3] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio3[bloque][1] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio3[bloque][3] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+                case 3:{                                                                //CPU3
+                    if(directorio3[bloque][1] == 1 && directorio3[bloque][2] == 1){     //El bloque esta en ambas caches
+                        resultado = 3;
+                    }else{
+                        if(directorio3[bloque][1] == 1){                                //El bloque esta en cacheaux1
+                            resultado = 1;
+                        }else{
+                            if(directorio3[bloque][2] == 1){                            //El bloque esta en cacheaux2
+                                resultado = 2;
+                            }   
+                        }   
+                    }
+                    break;
+                }
+            }    
+        }
+            break;
+    }
+}
+    
+
+//metodo que invalida el bloque de la seccion de la cache 
+void invalidarCache(int cache, int seccion){
+    
+    switch (cache) {
+        case 1:{                    
+            cacheDatos1[seccion][5] = 2;
+            break;
+        }
+        case 2:{                            
+            cacheDatos2[seccion][5] = 2;
+            break;
+        }
+        case 3:{                            
+            cacheDatos3[seccion][5] = 2;
+            break;
+        }
+    }
+}
+
+//metodo que actualiza estado del bloque en directorios y deja como unico dato el que acaba de modificar
+void actualizaDirSW(int directorio, int cache, int bloque){
+    switch (directorio) {
+        case 4:{                    
+            directorio1[bloque][0] = 1;             // pone estado como modificado
+            for(int i = 1; i < 4; i++){
+                if(i == cache){                     // pone cache como unica que la tiene
+                    directorio1[bloque][i] = 1;
+                }else{                              // pone caches en 0
+                    directorio1[bloque][i] = 0;
+                }
+            }
+            break;
+        }
+        case 5:{                     
+            directorio2[bloque][0] = 1;             // pone estado como modificado
+            for(int i = 1; i < 4; i++){
+                if(i == cache){                     // pone cache como unica que la tiene
+                    directorio2[bloque][i] = 1;
+                }else{                              // pone caches en 0
+                    directorio2[bloque][i] = 0;
+                }
+            }
+            break;
+        }
+        case 6:{                       
+            directorio3[bloque][0] = 1;             // pone estado como modificado
+            for(int i = 1; i < 4; i++){
+                if(i == cache){                     // pone cache como unica que la tiene
+                    directorio3[bloque][i] = 1;
+                }else{                              // pone caches en 0
+                    directorio3[bloque][i] = 0;
+                }
+            }
+            break;
+        }
+    }
+    
+}
+
+//metodo que actualiza estado del bloque en directorios y deja como unico dato el que acaba de modificar
+void directorioCompartido(int directorio, int bloque, int cache){
+    switch (directorio) {
+        case 4:{                    
+            directorio1[bloque][0] = 0;             // pone estado como compartido
+            directorio1[bloque][cache] = 1;         // Agrega cache 1 como compartida
+            break;
+        }
+        case 5:{                     
+            directorio2[bloque][0] = 0;             // pone estado como compartido
+            directorio2[bloque][cache] = 1;         // Agrega cache 2 como compartida
+            break;
+        }
+        case 6:{                       
+            directorio3[bloque][0] = 0;             // pone estado como compartido
+            directorio3[bloque][cache] = 1;         // Agrega cache 3 como compartida
+            break;
+        }
+    }
+    
+}
+
+
+
 void storeWord(int id_hilo, vector<int> palabra) {
-    bool siga = true;
     // Vector para los recursos
     
     /*  mlocks[1] - mlocks[2] - mlocks[3] = caches 1, 2 y 3 respectivamente
         mlocks[4] - mlocks[5] - mlocks[6] = directorios 1, 2 y 3 respectivamente
     */
+    vector<int> mLocks (7);
+    bool siga = true;
+    int dir = reg1[palabra[1]] + palabra[3];    //direccion donde esta el bloque
+    int bloque = dir/16;                        //numero de bloque que se quiere guardar
+    int palabraBloque = dir%16;                 //Numero de palabra que se quiere guardar
+    int seccion = bloque%4;                     //seccion de la cache donde el bloque cae
+    dir = dir / 4;                          //Division que se realiza para que la direccion concuerde con nuestra memoria
+    int directorio = directorioBloque(bloque);  //Directorio donde esta el bloque que se quiere modificar
+    int cachePrin = id_hilo;                //cache donde se va a guardar el dato
+    int cacheAux1, cacheAux2;               //caches donde puede estar el dato compartido o modificado
+    
+    switch (id_hilo) {
+        case 1:{                            //caso que CPU1 sea el que quiere guardar
+            cacheAux1 = 2;
+            cacheAux2 = 3;
+            break;
+        }
+        case 2:{                            //caso que CPU2 sea el que quiere guardar
+            cacheAux1 = 1;
+            cacheAux2 = 3;
+            break;
+        }
+        case 3:{                            //caso que CPU3 sea el que quiere guardar
+            cacheAux1 = 1;
+            cacheAux2 = 2;
+            break;
+        }
+    }
+    while(siga){                                                                                //mientras siga = true entra en el ciclo
+        if(reservarCache(cachePrin)){                                                           //reserva cacheprincipal
+            mLocks[cachePrin] = 1;                                                              //actualiza vector para liberacion de recursos
+            if(estaCache(cachePrin,seccion,bloque) && estaModificado(cachePrin,seccion)){       //pregunta si bloque esta en cache y si esta modificado
+                guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);                          //Guarda el dato en el bloque que esta en la seccion de la cache principal
+                mLocks = liberarRecursos(mLocks);                                               //libera recursos
+                siga=false;                                                                     //para que se salga del ciclo
+            }else{
+                if(estaCache(cachePrin,seccion,bloque) && estaCompartido(cachePrin,seccion)){   //Pregunta si el bloque esta en cacje y si esta compartido
+                    if(reservarDirectorio(bloque)){                                             //reserva el directorio donde se ubica el bloque que se quiere buscar
+                        mLocks[directorio] = 1;                                                  //actualiza vector para liberacion de recursos
+                        /*  
+                            0 = ninguna cache
+                            1 = si esta en cacheaux1
+                            2 = si esta en cacheaux2
+                            3 = si esta en ambas
+                        */
+                        int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);        //Pregunta cuales caches hay que invalidar
+                        switch (cachesinvalidar) {      
+                            case 1:{                                                            //si el bloque solo esta en cacheaux1
+                                if(reservarCache(cacheAux1)){                                   //reserva cacheaux1
+                                    mLocks[cacheAux1] = 1;                                      //actualiza vector para liberacion de recursos
+                                    invalidarCache(cacheAux1,seccion);                                  //Invalida cacheaux1
+                                    actualizaDirSW(directorio,cachePrin,bloque);                //Pone el bloque como modificado y indica que esta en la cache principal
+                                    guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);      //Guarda el dato en el bloque que esta en la seccion de la cache principal  
+                                    mLocks = liberarRecursos(mLocks);                           //libera recursos
+                                    siga=false;                                                 
+                                }else{                                                          //entra si cacheaux1 no pudo ser reservado
+                                    mLocks = liberarRecursos(mLocks);                           //libera recursos
+                                }
+                                break;
+                            }
+                            case 2:{                                                            //mismos comentarios pero con cacheaux2                    
+                                if(reservarCache(cacheAux2)){                                   
+                                    mLocks[cacheAux2] = 1;                                      
+                                    invalidarCache(cacheAux2,seccion);                                  
+                                    actualizaDirSW(directorio,cachePrin,bloque);                
+                                    guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);      
+                                    mLocks = liberarRecursos(mLocks);                           
+                                    siga=false;                                                 
+                                }else{                                                          
+                                    mLocks = liberarRecursos(mLocks);                           
+                                }
+                                break;
+                            }
+                            case 3:{                                                            //mismos comentarios pero con ambas caches
+                                if(reservarCache(cacheAux1) && reservarCache(cacheAux2)){      
+                                    mLocks[cacheAux1] = 1;                                     
+                                    mLocks[cacheAux2] = 1;                                     
+                                    invalidarCache(cacheAux1,seccion);                                 
+                                    invalidarCache(cacheAux2,seccion);                                 
+                                    actualizaDirSW(directorio,cachePrin,bloque);               
+                                    guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);      
+                                    mLocks = liberarRecursos(mLocks);                          
+                                    siga=false;
+                                }else{
+                                    mLocks = liberarRecursos(mLocks);
+                                }
+                                break;
+                            }
+                        }
+                    }else{                                                                      //Entra si directorio donde esta el bloque no se puede reservar
+                        mLocks = liberarRecursos(mLocks);
+                    }
+                }else{                                                                          //si el bloque no esta en cache o esta invalidado
+                    if(reservarDirectorio(bloque)){                                             //reserva el directorio donde esta el bloque que se quiere modificar
+                        mLocks[directorio] = 1;
+                        if(estaUncacheddir(directorio,bloque)){                                 //el bloque este uncached
+                            falloCacheDatos(bloque, dir, seccion, id_hilo);                     //trae el bloque de cache
+                            actualizaDirSW(directorio,cachePrin,bloque);                        //Pone el bloque como modificado y indica que esta en la cache principal
+                            guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);              //guarda dato
+                            mLocks = liberarRecursos(mLocks);                                   //libera recursos
+                            siga = false;
+                        }else{
+                            if(estaCompartidodir(directorio,bloque)){                           //el bloque este compartido en directorio
+                                /*  
+                                    0 = ninguna cache
+                                    1 = si esta en cacheaux1
+                                    2 = si esta en cacheaux2
+                                    3 = si esta en ambas
+                                */
+                                int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);    //pregunta las caches donde esta el bloque compartido 
+                                switch (cachesinvalidar) {                                          //mismos comentarios que para cuando esta compartido en la cache
+                                    case 1:{                            
+                                        if(reservarCache(cacheAux1)){
+                                            mLocks[cacheAux1] = 1;  
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo);         //trae el dato de la memoria de datos
+                                            invalidarCache(cacheAux1,seccion);
+                                            actualizaDirSW(directorio,cachePrin,bloque);
+                                            guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);
+                                            mLocks = liberarRecursos(mLocks);
+                                            siga=false;
+                                        }else{
+                                            mLocks = liberarRecursos(mLocks);
+                                        }
+                                        break;
+                                    }
+                                    case 2:{                        
+                                        if(reservarCache(cacheAux2)){
+                                            mLocks[cacheAux2] = 1;
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo);         //trae el dato de la memoria de datos
+                                            invalidarCache(cacheAux2,seccion);
+                                            actualizaDirSW(directorio,cachePrin,bloque);
+                                            guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);
+                                            mLocks = liberarRecursos(mLocks);
+                                            siga=false;
+                                        }else{
+                                            mLocks = liberarRecursos(mLocks);
+                                        }
+                                        break;
+                                    }
+                                    case 3:{                       
+                                        if(reservarCache(cacheAux1) && reservarCache(cacheAux2)){
+                                            mLocks[cacheAux1] = 1;
+                                            mLocks[cacheAux2] = 1;
+                                            falloCacheDatos(bloque, dir, seccion, id_hilo);         //trae el dato de la memoria de datos
+                                            invalidarCache(cacheAux1,seccion);
+                                            invalidarCache(cacheAux2,seccion);
+                                            actualizaDirSW(directorio,cachePrin,bloque);
+                                            guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);
+                                            mLocks = liberarRecursos(mLocks);
+                                            siga=false;
+                                        }else{
+                                            mLocks = liberarRecursos(mLocks);
+                                        }
+                                        break;
+                                    }
+                                } 
+                            }else{  //Este modificado 
+                                int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);
+                                switch (cachesinvalidar) {                                                  //comentarios iguales a los de compartido en la cache
+                                    case 1:{                            
+                                        if(reservarCache(cacheAux1)){
+                                            mLocks[cacheAux1] = 1;
+                                            guardaCacheDatosMem(bloque, dir, seccion, cacheAux1);           // guarda el dato en memoria antes de invalidarlo
+                                            guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux1);   //trae el dato de la cacheaux1 a la cache principal
+                                            invalidarCache(cacheAux1,seccion);
+                                            actualizaDirSW(directorio,cachePrin,bloque);
+                                            guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);
+                                            mLocks = liberarRecursos(mLocks);
+                                            siga=false;
+                                        }else{
+                                            mLocks = liberarRecursos(mLocks);
+                                        }
+                                        break;
+                                    }
+                                    case 2:{                        
+                                        if(reservarCache(cacheAux2)){
+                                            mLocks[cacheAux2] = 1;
+                                            guardaCacheDatosMem(bloque, dir, seccion, cacheAux2);           // guarda el dato en memoria antes de invalidarlo
+                                            guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux2);   //trae el dato de la cacheaux2 a la cache principal
+                                            invalidarCache(cacheAux2,seccion);
+                                            actualizaDirSW(directorio,cachePrin,bloque);
+                                            guardarDato(id_hilo,seccion,palabraBloque,palabra[2]);
+                                            mLocks = liberarRecursos(mLocks);
+                                            siga=false;
+                                        }else{
+                                            mLocks = liberarRecursos(mLocks);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    
+                    }else{
+                       mLocks = liberarRecursos(mLocks);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Metodo para realizar el LW con todos sus casos
+void loadWord(int id_hilo, vector<int> palabra) {
+    // Vector para los recursos
+    
+    /*  mlocks[1] - mlocks[2] - mlocks[3] = caches 1, 2 y 3 respectivamente
+        mlocks[4] - mlocks[5] - mlocks[6] = directorios 1, 2 y 3 respectivamente
+    */
+    vector<int> mLocks (7);
+    bool siga = true;
+    int dir = reg1[palabra[1]] + palabra[3];    //direccion donde esta el bloque
+    int bloque = dir/16;                        //numero de bloque que se quiere guardar
+    int palabraBloque = dir%16;                 //Numero de palabra que se quiere guardar
+    int seccion = bloque%4;                     //seccion de la cache donde el bloque cae
+    dir = dir / 4;                          //Division que se realiza para que la direccion concuerde con nuestra memoria
+    int directorio = directorioBloque(bloque);  //Directorio donde esta el bloque que se quiere modificar
+    int cachePrin = id_hilo;                //cache donde se va a guardar el dato
+    int cacheAux1, cacheAux2;               //caches donde puede estar el dato compartido o modificado
+    
+    switch (id_hilo) {
+        case 1:{                            //caso que CPU1 sea el que quiere guardar
+            cacheAux1 = 2;
+            cacheAux2 = 3;
+            break;
+        }
+        case 2:{                            //caso que CPU2 sea el que quiere guardar
+            cacheAux1 = 1;
+            cacheAux2 = 3;
+            break;
+        }
+        case 3:{                            //caso que CPU3 sea el que quiere guardar
+            cacheAux1 = 1;
+            cacheAux2 = 2;
+            break;
+        }
+    }
+    
+    while(siga){
+        if(reservarCache(cachePrin)){
+            mLocks[cachePrin] = 1; 
+            if(estaCache(cachePrin,seccion,bloque) && !estaInvalido(cachePrin,seccion)){
+                leePalabra(cachePrin, seccion, palabraBloque, palabra[2]);
+                siga = false;
+                mLocks = liberarRecursos(mLocks);
+            }else{
+                if(reservarDirectorio(bloque)){
+                    mLocks[directorio] = 1;
+                    if(!estaModificadodir(directorio, bloque)){
+                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                        directorioCompartido(directorio,bloque,cachePrin);
+                        leePalabra(cachePrin, seccion, palabraBloque, palabra[2]);
+                        siga = false;
+                        mLocks = liberarRecursos(mLocks);
+                    }else{ 
+                        int cachesmodificadas = cachesBloque(directorio,bloque,cachePrin);
+                        switch (cachesmodificadas) {                                                  
+                            case 1:{                            
+                                if(reservarCache(cacheAux1)){
+                                    mLocks[cacheAux1] = 1;
+                                    guardaCacheDatosMem(bloque, dir, seccion, cacheAux1);           // guarda el dato en memoria antes de invalidarlo
+                                    guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux1);   // trae el dato de la cacheaux1 a la cache principal
+                                    directorioCompartido(directorio,bloque,cachePrin);
+                                    leePalabra(cachePrin, seccion, palabraBloque, palabra[2]);
+                                    siga = false;
+                                    mLocks = liberarRecursos(mLocks);
+                                }else{
+                                    mLocks = liberarRecursos(mLocks);
+                                }
+                                break;
+                            }
+                            case 2:{                        
+                                if(reservarCache(cacheAux2)){
+                                    mLocks[cacheAux2] = 1;
+                                    guardaCacheDatosMem(bloque, dir, seccion, cacheAux2);           // guarda el dato en memoria antes de invalidarlo
+                                    guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux2);   // trae el dato de la cacheaux2 a la cache principal
+                                    directorioCompartido(directorio,bloque,cachePrin);
+                                    leePalabra(cachePrin, seccion, palabraBloque, palabra[2]);
+                                    siga = false;
+                                    mLocks = liberarRecursos(mLocks);
+                                }else{
+                                    mLocks = liberarRecursos(mLocks);
+                                }
+                                break;
+                            }
+                        }
+                        
+                    }
+                }else{
+                    mLocks = liberarRecursos(mLocks);
+                }
+            }
+        }
+    }
+}
+    
+    
+void loadLink(int id_hilo, vector<int> palabra) {
+    loadWord(id_hilo,palabra);
+    switch (id_hilo) {
+        case 1:{
+            RL1 = reg1[palabra[1]] + palabra[3];
+            break;
+         }
+        case 2:{
+            RL2 = reg2[palabra[1]] + palabra[3];
+            break;
+        }
+        case 3:{
+            RL3 = reg3[palabra[1]] + palabra[3];
+            break;
+        }
+    }
+}
+
+void storeConditional(int id_hilo, vector<int> palabra) {
+    bool siga = true;
+    switch (id_hilo) {
+        case 1:{
+            while(siga){
+                if(pthread_mutex_trylock(&mRL1) == 0){
+                    if(RL1 == reg1[palabra[1]] + palabra[3]){
+                        if(RL2 == reg1[palabra[1]] + palabra[3] && RL3 == reg1[palabra[1]] + palabra[3]){
+                            if(pthread_mutex_trylock(&mRL2) == 0 ){
+                                if(pthread_mutex_trylock(&mRL3) == 0) {
+                                        RL1 = -1;
+                                        RL2 = -1;
+                                        RL3 = -1;
+                                        storeWord(id_hilo,palabra);
+                                        siga = false;
+                                        pthread_mutex_unlock(&mRL1);
+                                        pthread_mutex_unlock(&mRL2);
+                                        pthread_mutex_unlock(&mRL3);
+                                }else{
+                                    pthread_mutex_unlock(&mRL1);
+                                    pthread_mutex_unlock(&mRL2);
+                                }
+                            }else{
+                                pthread_mutex_unlock(&mRL1);
+                            }
+                        }else{
+                            if(RL2 == reg1[palabra[1]] + palabra[3]){
+                                if(pthread_mutex_trylock(&mRL2) == 0) {
+                                        RL1 = -1;
+                                        RL2 = -1;
+                                        storeWord(id_hilo,palabra);
+                                        siga = false;
+                                        pthread_mutex_unlock(&mRL1);
+                                        pthread_mutex_unlock(&mRL2);
+                                }else{
+                                    pthread_mutex_unlock(&mRL1);
+                                }
+                            }else{
+                                if(RL3 == reg1[palabra[1]] + palabra[3]){
+                                    if(pthread_mutex_trylock(&mRL3) == 0) {
+                                            RL1 = -1;
+                                            RL3 = -1;
+                                            storeWord(id_hilo,palabra);
+                                            siga = false;
+                                            pthread_mutex_unlock(&mRL1);
+                                            pthread_mutex_unlock(&mRL3);
+                                    }else{
+                                        pthread_mutex_unlock(&mRL1);
+                                    }
+                                }else{
+                                    RL1 = -1;
+                                    storeWord(id_hilo,palabra);
+                                    siga = false;
+                                    pthread_mutex_unlock(&mRL1);
+                                }   
+                            }    
+                        }
+                    }else{
+                        reg1[palabra[2]] = 0;
+                        siga = false;
+                    }    
+                }
+            }
+            
+            break;
+        }
+        case 2:{
+            while(siga){
+                if(pthread_mutex_trylock(&mRL2) == 0){
+                    if(RL2 == reg2[palabra[1]] + palabra[3]){
+                        if(RL1 == reg2[palabra[1]] + palabra[3] && RL3 == reg2[palabra[1]] + palabra[3]){
+                            if(pthread_mutex_trylock(&mRL1) == 0 ){
+                                if(pthread_mutex_trylock(&mRL3) == 0) {
+                                        RL2 = -1;
+                                        RL1 = -1;
+                                        RL3 = -1;
+                                        storeWord(id_hilo,palabra);
+                                        siga = false;
+                                        pthread_mutex_unlock(&mRL2);
+                                        pthread_mutex_unlock(&mRL1);
+                                        pthread_mutex_unlock(&mRL3);
+                                }else{
+                                    pthread_mutex_unlock(&mRL2);
+                                    pthread_mutex_unlock(&mRL1);
+                                }
+                            }else{
+                                pthread_mutex_unlock(&mRL2);
+                            }
+                        }else{
+                            if(RL1 == reg2[palabra[1]] + palabra[3]){
+                                if(pthread_mutex_trylock(&mRL1) == 0) {
+                                        RL2 = -1;
+                                        RL1 = -1;
+                                        storeWord(id_hilo,palabra);
+                                        siga = false;
+                                        pthread_mutex_unlock(&mRL2);
+                                        pthread_mutex_unlock(&mRL1);
+                                }else{
+                                    pthread_mutex_unlock(&mRL2);
+                                }
+                            }else{
+                                if(RL3 == reg2[palabra[1]] + palabra[3]){
+                                    if(pthread_mutex_trylock(&mRL3) == 0) {
+                                            RL1 = -1;
+                                            RL3 = -1;
+                                            storeWord(id_hilo,palabra);
+                                            siga = false;
+                                            pthread_mutex_unlock(&mRL1);
+                                            pthread_mutex_unlock(&mRL3);
+                                    }else{
+                                        pthread_mutex_unlock(&mRL2);
+                                    }
+                                }else{
+                                    RL2 = -1;
+                                    storeWord(id_hilo,palabra);
+                                    siga = false;
+                                    pthread_mutex_unlock(&mRL2);
+                                }   
+                            }    
+                        }
+                    }else{
+                        reg1[palabra[2]] = 0;
+                        siga = false;
+                    }    
+                }
+            }
+            break;
+        }
+        case 3:{
+            while(siga){
+                if(pthread_mutex_trylock(&mRL1) == 0){
+                    if(RL3 == reg3[palabra[1]] + palabra[3]){
+                        if(RL1 == reg3[palabra[1]] + palabra[3] && RL2 == reg3[palabra[1]] + palabra[3]){
+                            if(pthread_mutex_trylock(&mRL1) == 0 ){
+                                if(pthread_mutex_trylock(&mRL2) == 0) {
+                                        RL1 = -1;
+                                        RL2 = -1;
+                                        RL3 = -1;
+                                        storeWord(id_hilo,palabra);
+                                        siga = false;
+                                        pthread_mutex_unlock(&mRL1);
+                                        pthread_mutex_unlock(&mRL2);
+                                        pthread_mutex_unlock(&mRL3);
+                                }else{
+                                    pthread_mutex_unlock(&mRL1);
+                                    pthread_mutex_unlock(&mRL3);
+                                }
+                            }else{
+                                pthread_mutex_unlock(&mRL3);
+                            }
+                        }else{
+                            if(RL2 == reg3[palabra[1]] + palabra[3]){
+                                if(pthread_mutex_trylock(&mRL2) == 0) {
+                                        RL2 = -1;
+                                        RL3 = -1;
+                                        storeWord(id_hilo,palabra);
+                                        siga = false;
+                                        pthread_mutex_unlock(&mRL2);
+                                        pthread_mutex_unlock(&mRL3);
+                                }else{
+                                    pthread_mutex_unlock(&mRL3);
+                                }
+                            }else{
+                                if(RL1 == reg3[palabra[1]] + palabra[3]){
+                                    if(pthread_mutex_trylock(&mRL1) == 0) {
+                                            RL1 = -1;
+                                            RL3 = -1;
+                                            storeWord(id_hilo,palabra);
+                                            siga = false;
+                                            pthread_mutex_unlock(&mRL1);
+                                            pthread_mutex_unlock(&mRL3);
+                                    }else{
+                                        pthread_mutex_unlock(&mRL3);
+                                    }
+                                }else{
+                                    RL3 = -1;
+                                    storeWord(id_hilo,palabra);
+                                    siga = false;
+                                    pthread_mutex_unlock(&mRL3);
+                                }   
+                            }    
+                        }
+                    }else{
+                        reg3[palabra[2]] = 0;
+                        siga = false;
+                    }    
+                }
+            }
+            break;
+        }
+    }
+}
+    
+/*    
+// Metodo para realizar el SW con todos sus casos
+void storeWordlargo(int id_hilo, vector<int> palabra) {
+    bool siga = true;
+    // Vector para los recursos
+    
+    /*  mlocks[1] - mlocks[2] - mlocks[3] = caches 1, 2 y 3 respectivamente
+        mlocks[4] - mlocks[5] - mlocks[6] = directorios 1, 2 y 3 respectivamente
+    
     vector<int> mLocks (7);
     
     dir = reg1[palabra[1]] + palabra[3]; 
@@ -867,7 +1876,7 @@ void storeWord(int id_hilo, vector<int> palabra) {
                        mlocks[1] = 1;
                        if((cacheDatos1[seccion][4] == bloque) && (cacheDatos1[seccion][5] == 1)){ //cuando el bloque esta en cache y estado "M"
                            
-                           cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
+                           cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
                            mlocks = liberarRecursos(mlocks);
                            siga = false;
                        }
@@ -877,209 +1886,1449 @@ void storeWord(int id_hilo, vector<int> palabra) {
                             
                             if(pthread_mutex_trylock(&mDirectorio1) == 0){
                                 mlocks[4] = 1;
-                                if(directorio1[bloque][2] = 1){ //cuando el bloque esta compartido con en cache2
-                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0){
-                                       mlocks[1] = 1;
-                                       cacheDatos2[seccion][5] = 2;
-                                       directorio1[bloque][2] = 0;
+                                
+                                if(directorio1[bloque][2] = 1 && directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[3] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio1[bloque][2] = 0;
+                                        cacheDatos3[seccion][5] = 2;
+                                        directorio1[bloque][3] = 0;
+                                       
+                                        directorio1[bloque][0] = 1;
+                                        directorio1[bloque][1] = 1;
+                                        cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                siga = false;
                                     }else{
                                         mlocks = liberarRecursos(mlocks);
                                     }
-                                }
-                                if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
-                                    if(pthread_mutex_trylock(&mCacheDatos3) == 0){
-                                        mlocks[3] = 1;
-                                       cacheDatos3[seccion][5] = 2;
-                                       directorio1[bloque][3] = 0;
-                                    }else{
-                                        mlocks = liberarRecursos(mlocks);
+                                } else {
+                                    if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                            mlocks[3] = 1;
+                                            cacheDatos3[seccion][5] = 2;
+                                            directorio1[bloque][3] = 0;
+                                            directorio1[bloque][0] = 1;
+                                            directorio1[bloque][1] = 1;
+                                            cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio1[bloque][2] = 0;
+                                            directorio1[bloque][0] = 1;
+                                            directorio1[bloque][1] = 1;
+                                            cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
                                     }
                                 }
                                 
-                                directorio1[bloque][0] = 1;
-                                directorio1[bloque][1] = 1;
-                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
-                                mLocks = liberarRecursos(mlocks);
-                                siga = false;
                             }else{
                                 mlocks = liberarRecursos(mlocks);  
                             }
                         }else{
                             if(bloque < 16){ //si el bloque está en el directorio2
                                 if(pthread_mutex_trylock(&mDirectorio2) == 0){
-                                    if(directorio2[bloque][2] = 1){
-                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
-                                           cacheDatos2[seccion][5] = 2;
-                                           directorio1[bloque][2] = 0;
-                                        }else{
-                                            pthread_mutex_unlock(&mCacheDatos1);
-                                            pthread_mutex_unlock(&mDirectorio2);
-                                        }
-                                    }else{ 
-                                        if(directorio2[bloque][3] = 1){
-                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
-                                               cacheDatos3[seccion][5] = 2;
-                                               directorio1[bloque][3] = 0;
-                                            }else{
-                                                pthread_mutex_unlock(&mCacheDatos1);
-                                                pthread_mutex_unlock(&mDirectorio2);
-                                            }
-                                        }
-                                    }
-                                    directorio2[bloque][0] = 1;
-                                    directorio2[bloque][1] = 1;
-                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
-                                    pthread_mutex_unlock(&mCacheDatos1);
-                                    pthread_mutex_unlock(&mDirectorio2);
-                                    pthread_mutex_unlock(&mCacheDatos2); //esto puede fallar
-                                    pthread_mutex_unlock(&mCacheDatos3); //esto puede fallar
-                                    siga = false;
-                                }else{
-                                    pthread_mutex_unlock(&mCacheDatos1);    
-                                }
-                            }else { //si el bloque est en directorio3
-                                if(pthread_mutex_trylock(&mDirectorio3) == 0){
-                                    if(directorio3[bloque][2] = 1){
-                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
-                                           cacheDatos2[seccion][5] = 2;
-                                           directorio1[bloque][2] = 0;
-                                        }else{
-                                            pthread_mutex_unlock(&mCacheDatos1);
-                                            pthread_mutex_unlock(&mDirectorio3);
-                                        }
+                                mlocks[4] = 1;
+                                
+                                if(directorio2[bloque][2] = 1 && directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[3] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio2[bloque][2] = 0;
+                                        cacheDatos3[seccion][5] = 2;
+                                        directorio2[bloque][3] = 0;
+                                       
+                                        directorio2[bloque][0] = 1;
+                                        directorio2[bloque][1] = 1;
+                                        cacheDatos2[seccion][palabraBloque] = reg1[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                        siga = false;
                                     }else{
-                                        if(directorio3[bloque][3] = 1){
-                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
-                                               cacheDatos3[seccion][5] = 2;
-                                               directorio1[bloque][3] = 0;
-                                            }else{
-                                                pthread_mutex_unlock(&mCacheDatos1);
-                                                pthread_mutex_unlock(&mDirectorio3);
-                                            }
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                            mlocks[3] = 1;
+                                            cacheDatos3[seccion][5] = 2;
+                                            directorio2[bloque][3] = 0;
+                                            directorio2[bloque][0] = 1;
+                                            directorio2[bloque][1] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg1[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio2[bloque][2] = 0;
+                                            directorio2[bloque][0] = 1;
+                                            directorio2[bloque][1] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg1[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
                                         }
                                     }
-                                }else{
-                                    pthread_mutex_unlock(&mCacheDatos1);    
                                 }
-                                directorio3[bloque][0] = 1;
-                                directorio3[bloque][1] = 1;
-                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
-                                pthread_mutex_unlock(&mCacheDatos1);
-                                pthread_mutex_unlock(&mDirectorio3);
-                                pthread_mutex_unlock(&mCacheDatos2); //esto puede fallar
-                                pthread_mutex_unlock(&mCacheDatos3); //esto puede fallar
-                                siga = false;
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
                             }
-                    }
+                        }else{ // si esta en directorio 3
+                            if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                mlocks[6] = 1;
+                                
+                                if(directorio3[bloque][2] = 1 && directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[3] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio3[bloque][2] = 0;
+                                        cacheDatos3[seccion][5] = 2;
+                                        directorio3[bloque][3] = 0;
+                                       
+                                        directorio3[bloque][0] = 1;
+                                        directorio3[bloque][1] = 1;
+                                        cacheDatos3[seccion][palabraBloque] = reg1[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                            mlocks[3] = 1;
+                                            cacheDatos3[seccion][5] = 2;
+                                            directorio3[bloque][3] = 0;
+                                            directorio3[bloque][0] = 1;
+                                            directorio3[bloque][1] = 1;
+                                            cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio3[bloque][2] = 0;
+                                            directorio3[bloque][0] = 1;
+                                            directorio3[bloque][1] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg1[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }    
                 }else{ // si el bloque no esta en la cache o si esta invalido
                     if(bloque < 8){ //si el bloque est en directorio1
-                            if(pthread_mutex_trylock(&mDirectorio1) == 0){ 
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){
+                                mlocks[4] = 1;
                                 // estado 0 = "C", 1 = "M", 2 = "U"
                                 if(directorio1[bloque][0] = 2){ //el bloque este uncached
                                     falloCacheDatos(bloque, dir, seccion, id_hilo);
                                     directorio1[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
                                     directorio1[bloque][1] = 1; // Pone modificado en el directorio para cpu1
-                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
-                                    pthread_mutex_unlock(&mCacheDatos1);
-                                    pthread_mutex_unlock(&mDirectorio3);
+                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
                                     siga = false;
                                 }else{
                                     if(directorio1[bloque][0] = 0){ //si el bloque esta compartido
                                         falloCacheDatos(bloque, dir, seccion, id_hilo);
-                                        if(directorio1[bloque][2] = 1){ //cuando el bloque esta compartido con en cache2
-                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0){
-                                               cacheDatos2[seccion][5] = 2;
-                                               directorio1[bloque][2] = 0;
+                                        if(directorio1[bloque][2] = 1 && directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                mlocks[2] = 1;
+                                                mlocks[3] = 1;
+                                                cacheDatos2[seccion][5] = 2;
+                                                directorio1[bloque][2] = 0;
+                                                cacheDatos3[seccion][5] = 2;
+                                                directorio1[bloque][3] = 0;
+                                               
+                                                directorio1[bloque][0] = 1;
+                                                directorio1[bloque][1] = 1;
+                                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
                                             }else{
-                                                pthread_mutex_unlock(&mCacheDatos1);
-                                                pthread_mutex_unlock(&mDirectorio1);
+                                                mlocks = liberarRecursos(mlocks);
                                             }
-                                        }else{
+                                        } else {
                                             if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
                                                 if(pthread_mutex_trylock(&mCacheDatos3) == 0){
-                                                   cacheDatos3[seccion][5] = 2;
-                                                   directorio1[bloque][3] = 0;
+                                                    mlocks[3] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio1[bloque][3] = 0;
+                                                    directorio1[bloque][0] = 1;
+                                                    directorio1[bloque][1] = 1;
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
                                                 }else{
-                                                    pthread_mutex_unlock(&mCacheDatos1);
-                                                    pthread_mutex_unlock(&mDirectorio1);
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio1[bloque][2] = 0;
+                                                    directorio1[bloque][0] = 1;
+                                                    directorio1[bloque][1] = 1;
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
                                                 }
                                             }
                                         }
-                                        directorio1[bloque][0] = 1;
-                                        directorio1[bloque][1] = 1;
-                                        cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]]
-                                        pthread_mutex_unlock(&mCacheDatos1);
-                                        pthread_mutex_unlock(&mDirectorio1);
-                                        pthread_mutex_unlock(&mCacheDatos2); //esto puede fallar
-                                        pthread_mutex_unlock(&mCacheDatos3); //esto puede fallar
-                                        siga = false;
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio1[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 2); // trae el dato a su cache
+                                                    cacheDatos2[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio1[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio1[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio1[bloque][1] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos1[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 3); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio1[bloque][3] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio1[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio1[bloque][1] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos1[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }
                                     }
                                 }
                             }else{
-                                pthread_mutex_unlock(&mCacheDatos1);    
+                                mLocks = liberarRecursos(mLocks);     
                             }
                         }else{
                             if(bloque < 16){ //si el bloque está en el directorio2
                                 if(pthread_mutex_trylock(&mDirectorio2) == 0){
-                                    if(directorio2[bloque][2] = 1){
-                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
-                                           cacheDatos2[seccion][5] = 2;
-                                        }else{
-                                            pthread_mutex_unlock(&mCacheDatos1);
-                                            pthread_mutex_unlock(&mDirectorio2);
-                                        }
-                                    }else{ 
-                                        if(directorio2[bloque][3] = 1){
-                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
-                                               cacheDatos3[seccion][5] = 2;
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio2[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio2[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio2[bloque][1] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio2[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio2[bloque][2] = 1 && directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                mlocks[2] = 1;
+                                                mlocks[3] = 1;
+                                                cacheDatos2[seccion][5] = 2;
+                                                directorio2[bloque][2] = 0;
+                                                cacheDatos3[seccion][5] = 2;
+                                                directorio2[bloque][3] = 0;
+                                               
+                                                directorio2[bloque][0] = 1;
+                                                directorio2[bloque][1] = 1;
+                                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
                                             }else{
-                                                pthread_mutex_unlock(&mCacheDatos1);
-                                                pthread_mutex_unlock(&mDirectorio2);
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio2[bloque][3] = 0;
+                                                    directorio2[bloque][0] = 1;
+                                                    directorio2[bloque][1] = 1;
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio2[bloque][2] = 0;
+                                                    directorio2[bloque][0] = 1;
+                                                    directorio2[bloque][1] = 1;
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
                                             }
                                         }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio2[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 2); // trae el dato a su cache
+                                                    cacheDatos2[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio2[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio2[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio2[bloque][1] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos1[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 3); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio2[bloque][3] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio2[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio2[bloque][1] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos1[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }
                                     }
-                                }else{
-                                    pthread_mutex_unlock(&mCacheDatos1);    
                                 }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
                             }else { //si el bloque est en directorio3
                                 if(pthread_mutex_trylock(&mDirectorio3) == 0){
-                                    if(directorio3[bloque][2] = 1){
-                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
-                                           cacheDatos2[seccion][5] = 2;
-                                        }else{
-                                            pthread_mutex_unlock(&mCacheDatos1);
-                                            pthread_mutex_unlock(&mDirectorio3);
-                                        }
-                                    }else{
-                                        if(directorio3[bloque][3] = 1){
-                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
-                                               cacheDatos3[seccion][5] = 2;
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio3[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio3[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio3[bloque][1] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio3[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio3[bloque][2] = 1 && directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                mlocks[2] = 1;
+                                                mlocks[3] = 1;
+                                                cacheDatos2[seccion][5] = 2;
+                                                directorio3[bloque][2] = 0;
+                                                cacheDatos3[seccion][5] = 2;
+                                                directorio3[bloque][3] = 0;
+                                               
+                                                directorio3[bloque][0] = 1;
+                                                directorio3[bloque][1] = 1;
+                                                cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
                                             }else{
-                                                pthread_mutex_unlock(&mCacheDatos1);
-                                                pthread_mutex_unlock(&mDirectorio3);
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio3[bloque][3] = 0;
+                                                    directorio3[bloque][0] = 1;
+                                                    directorio3[bloque][1] = 1;
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio3[bloque][2] = 0;
+                                                    directorio3[bloque][0] = 1;
+                                                    directorio3[bloque][1] = 1;
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio3[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 2); // trae el dato a su cache
+                                                    cacheDatos2[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio3[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio3[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio3[bloque][1] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos3[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 1, 3); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio3[bloque][3] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio3[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio3[bloque][1] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos1[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos1[seccion][palabraBloque] = reg1[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
                                             }
                                         }
                                     }
-                                }else{
-                                    pthread_mutex_unlock(&mCacheDatos1);    
                                 }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
                             }
+                        }
                     }
                 }    
-            }
-            break;
-         }
-        case 2:{
             
+            }
+        }
+            break;
+        }
+        case 2:{
+            while(siga){
+                if(pthread_mutex_trylock(&mCacheDatos2) == 0) { 
+                       mlocks[2] = 1;
+                       if((cacheDatos2[seccion][4] == bloque) && (cacheDatos2[seccion][5] == 1)){ //cuando el bloque esta en cache y estado "M"
+                           
+                           cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                           mlocks = liberarRecursos(mlocks);
+                           siga = false;
+                       }
+                }else{
+                    if((cacheDatos2[seccion][4] == bloque) && (cacheDatos2[seccion][5] == 0)){ //cuando el bloque esta en cache y estado "C"
+                        if(bloque < 8){ //si el bloque est en directorio1
+                            
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){
+                                mlocks[4] = 1;
+                                
+                                if(directorio1[bloque][1] = 1 && directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos1) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[3] = 1;
+                                        cacheDatos1[seccion][5] = 2;
+                                        directorio1[bloque][1] = 0;
+                                        cacheDatos3[seccion][5] = 2;
+                                        directorio1[bloque][3] = 0;
+                                       
+                                        directorio1[bloque][0] = 1;
+                                        directorio1[bloque][2] = 1;
+                                        cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                            mlocks[3] = 1;
+                                            cacheDatos3[seccion][5] = 2;
+                                            directorio1[bloque][3] = 0;
+                                            directorio1[bloque][0] = 1;
+                                            directorio1[bloque][2] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio1[bloque][2] = 0;
+                                            directorio1[bloque][0] = 1;
+                                            directorio1[bloque][2] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }else{
+                            if(bloque < 16){ //si el bloque está en el directorio2
+                                if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                mlocks[4] = 1;
+                                
+                                if(directorio2[bloque][1] = 1 && directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[1] = 1;
+                                        mlocks[3] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio2[bloque][1] = 0;
+                                        cacheDatos3[seccion][5] = 2;
+                                        directorio2[bloque][3] = 0;
+                                       
+                                        directorio2[bloque][0] = 1;
+                                        directorio2[bloque][2] = 1;
+                                        cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                            mlocks[3] = 1;
+                                            cacheDatos3[seccion][5] = 2;
+                                            directorio2[bloque][3] = 0;
+                                            directorio2[bloque][0] = 1;
+                                            directorio2[bloque][2] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                            mlocks[1] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio2[bloque][1] = 0;
+                                            directorio2[bloque][0] = 1;
+                                            directorio2[bloque][2] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }else{ // si esta en directorio 3
+                            if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                mlocks[6] = 1;
+                                
+                                if(directorio3[bloque][1] = 1 && directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos1) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                        mlocks[1] = 1;
+                                        mlocks[3] = 1;
+                                        cacheDatos1[seccion][5] = 2;
+                                        directorio3[bloque][1] = 0;
+                                        cacheDatos3[seccion][5] = 2;
+                                        directorio3[bloque][3] = 0;
+                                       
+                                        directorio3[bloque][0] = 1;
+                                        directorio3[bloque][2] = 1;
+                                        cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                            mlocks[3] = 1;
+                                            cacheDatos3[seccion][5] = 2;
+                                            directorio3[bloque][3] = 0;
+                                            directorio3[bloque][0] = 1;
+                                            directorio3[bloque][2] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                            mlocks[1] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio3[bloque][1] = 0;
+                                            directorio3[bloque][0] = 1;
+                                            directorio3[bloque][2] = 1;
+                                            cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }    
+                }else{ // si el bloque no esta en la cache o si esta invalido
+                    if(bloque < 8){ //si el bloque est en directorio1
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio1[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio1[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio1[bloque][2] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio1[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio1[bloque][1] = 1 && directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos1) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                mlocks[1] = 1;
+                                                mlocks[3] = 1;
+                                                cacheDatos1[seccion][5] = 2;
+                                                directorio1[bloque][1] = 0;
+                                                cacheDatos3[seccion][5] = 2;
+                                                directorio1[bloque][3] = 0;
+                                               
+                                                directorio1[bloque][0] = 1;
+                                                directorio1[bloque][2] = 1;
+                                                cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                            }else{
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio1[bloque][3] = 0;
+                                                    directorio1[bloque][0] = 1;
+                                                    directorio1[bloque][2] = 1;
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1;
+                                                    cacheDatos1[seccion][5] = 2;
+                                                    directorio1[bloque][1] = 0;
+                                                    directorio1[bloque][0] = 1;
+                                                    directorio1[bloque][2] = 1;
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio1[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 1); // trae el dato a su cache
+                                                    cacheDatos1[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio1[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio1[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio1[bloque][2] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos2[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 3); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio1[bloque][3] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio1[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio1[bloque][2] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos2[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }
+                                    }
+                                }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
+                        }else{
+                            if(bloque < 16){ //si el bloque está en el directorio2
+                                if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio2[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio2[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio2[bloque][2] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio2[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio2[bloque][1] = 1 && directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                mlocks[1] = 1;
+                                                mlocks[3] = 1;
+                                                cacheDatos1[seccion][5] = 2;
+                                                directorio2[bloque][1] = 0;
+                                                cacheDatos3[seccion][5] = 2;
+                                                directorio2[bloque][3] = 0;
+                                               
+                                                directorio2[bloque][0] = 1;
+                                                directorio2[bloque][2] = 1;
+                                                cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                            }else{
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio2[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio2[bloque][3] = 0;
+                                                    directorio2[bloque][0] = 1;
+                                                    directorio2[bloque][2] = 1;
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio2[bloque][3] = 0;
+                                                    directorio2[bloque][0] = 1;
+                                                    directorio2[bloque][2] = 1;
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio2[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 1); // trae el dato a su cache
+                                                    cacheDatos1[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio2[bloque][1] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio2[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio2[bloque][2] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos2[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 3); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio2[bloque][3] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio2[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio2[bloque][2] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos2[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }
+                                    }
+                                }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
+                            }else { //si el bloque est en directorio3
+                                if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio3[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio3[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio3[bloque][2] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio3[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio3[bloque][2] = 1 && directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                mlocks[1] = 1;
+                                                mlocks[3] = 1;
+                                                cacheDatos1[seccion][5] = 2;
+                                                directorio3[bloque][2] = 0;
+                                                cacheDatos3[seccion][5] = 2;
+                                                directorio3[bloque][3] = 0;
+                                               
+                                                directorio3[bloque][0] = 1;
+                                                directorio3[bloque][1] = 1;
+                                                cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                            }else{
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio3[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio3[bloque][3] = 0;
+                                                    directorio3[bloque][0] = 1;
+                                                    directorio3[bloque][2] = 1;
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio3[bloque][1] = 0;
+                                                    directorio3[bloque][0] = 1;
+                                                    directorio3[bloque][2] = 1;
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio3[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 1); // trae el dato a su cache
+                                                    cacheDatos1[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio3[bloque][1] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio3[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio3[bloque][2] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos2[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos3) == 0){
+                                                    mlocks[3] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 2, 3); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio3[bloque][3] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio3[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio3[bloque][2] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos2[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos2[seccion][palabraBloque] = reg2[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
+                        }
+                    }
+                }    
+            
+            }
+        }
             break;
         }
         case 3:{
+            while(siga){
+                if(pthread_mutex_trylock(&mCacheDatos3) == 0) { 
+                       mlocks[3] = 1;
+                       if((cacheDatos3[seccion][4] == bloque) && (cacheDatos3[seccion][5] == 1)){ //cuando el bloque esta en cache y estado "M"
+                           
+                           cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                           mlocks = liberarRecursos(mlocks);
+                           siga = false;
+                       }
+                }else{
+                    if((cacheDatos3[seccion][4] == bloque) && (cacheDatos3[seccion][5] == 0)){ //cuando el bloque esta en cache y estado "C"
+                        if(bloque < 8){ //si el bloque est en directorio1
+                            
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){
+                                mlocks[4] = 1;
+                                
+                                if(directorio1[bloque][2] = 1 && directorio1[bloque][1] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[1] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio1[bloque][2] = 0;
+                                        cacheDatos1[seccion][5] = 2;
+                                        directorio1[bloque][1] = 0;
+                                       
+                                        directorio1[bloque][0] = 1;
+                                        directorio1[bloque][3] = 1;
+                                        cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio1[bloque][1] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                            mlocks[1] = 1;
+                                            cacheDatos1[seccion][5] = 2;
+                                            directorio1[bloque][1] = 0;
+                                            directorio1[bloque][0] = 1;
+                                            directorio1[bloque][3] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio1[bloque][2] = 0;
+                                            directorio1[bloque][0] = 1;
+                                            directorio1[bloque][3] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }else{
+                            if(bloque < 16){ //si el bloque está en el directorio2
+                                if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                mlocks[4] = 1;
+                                
+                                if(directorio2[bloque][2] = 1 && directorio2[bloque][1] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[1] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio2[bloque][2] = 0;
+                                        cacheDatos1[seccion][5] = 2;
+                                        directorio2[bloque][1] = 0;
+                                       
+                                        directorio2[bloque][0] = 1;
+                                        directorio2[bloque][3] = 1;
+                                        cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio2[bloque][1] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                            mlocks[1] = 1;
+                                            cacheDatos1[seccion][5] = 2;
+                                            directorio2[bloque][1] = 0;
+                                            directorio2[bloque][0] = 1;
+                                            directorio2[bloque][3] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio2[bloque][2] = 0;
+                                            directorio2[bloque][0] = 1;
+                                            directorio2[bloque][3] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }else{ // si esta en directorio 3
+                            if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                mlocks[6] = 1;
+                                
+                                if(directorio3[bloque][2] = 1 && directorio3[bloque][1] = 1){ //cuando el bloque esta compartido con en cache2
+                                    if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                        mlocks[2] = 1;
+                                        mlocks[1] = 1;
+                                        cacheDatos2[seccion][5] = 2;
+                                        directorio3[bloque][2] = 0;
+                                        cacheDatos1[seccion][5] = 2;
+                                        directorio3[bloque][1] = 0;
+                                       
+                                        directorio3[bloque][0] = 1;
+                                        directorio3[bloque][3] = 1;
+                                        cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                        mLocks = liberarRecursos(mlocks);
+                                siga = false;
+                                    }else{
+                                        mlocks = liberarRecursos(mlocks);
+                                    }
+                                } else {
+                                    if(directorio3[bloque][1] = 1){ //cuando el bloque esta compartido con en cache3
+                                        if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                            mlocks[1] = 1;
+                                            cacheDatos1[seccion][5] = 2;
+                                            directorio3[bloque][1] = 0;
+                                            directorio3[bloque][0] = 1;
+                                            directorio3[bloque][3] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    } else {
+                                        if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                            mlocks[2] = 1;
+                                            cacheDatos2[seccion][5] = 2;
+                                            directorio3[bloque][2] = 0;
+                                            directorio3[bloque][0] = 1;
+                                            directorio3[bloque][3] = 1;
+                                            cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                            mLocks = liberarRecursos(mlocks);
+                                            siga = false;
+                                        }else{
+                                            mlocks = liberarRecursos(mlocks);
+                                        }
+                                    }
+                                }
+                                
+                            }else{
+                                mlocks = liberarRecursos(mlocks);  
+                            }
+                        }    
+                }else{ // si el bloque no esta en la cache o si esta invalido
+                    if(bloque < 8){ //si el bloque est en directorio1
+                            if(pthread_mutex_trylock(&mDirectorio1) == 0){
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio1[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio1[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio1[bloque][3] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio1[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio1[bloque][2] = 1 && directorio1[bloque][1] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                mlocks[2] = 1;
+                                                mlocks[1] = 1;
+                                                cacheDatos2[seccion][5] = 2;
+                                                directorio1[bloque][2] = 0;
+                                                cacheDatos1[seccion][5] = 2;
+                                                directorio1[bloque][1] = 0;
+                                               
+                                                directorio1[bloque][0] = 1;
+                                                directorio1[bloque][3] = 1;
+                                                cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                            }else{
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio1[bloque][3] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1;
+                                                    cacheDatos1[seccion][5] = 2;
+                                                    directorio1[bloque][1] = 0;
+                                                    directorio1[bloque][0] = 1;
+                                                    directorio1[bloque][3] = 1;
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio1[bloque][2] = 0;
+                                                    directorio1[bloque][0] = 1;
+                                                    directorio1[bloque][3] = 1;
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio1[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 2); // trae el dato a su cache
+                                                    cacheDatos2[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio1[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio1[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio1[bloque][3] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos3[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 1); // trae el dato a su cache
+                                                    cacheDatos1[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio1[bloque][1] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio1[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio1[bloque][3] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos3[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }
+                                    }
+                                }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
+                        }else{
+                            if(bloque < 16){ //si el bloque está en el directorio2
+                                if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio2[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio2[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio2[bloque][1] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio2[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio2[bloque][2] = 1 && directorio2[bloque][1] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                mlocks[2] = 1;
+                                                mlocks[1] = 1;
+                                                cacheDatos2[seccion][5] = 2;
+                                                directorio2[bloque][2] = 0;
+                                                cacheDatos1[seccion][5] = 2;
+                                                directorio2[bloque][1] = 0;
+                                               
+                                                directorio2[bloque][0] = 1;
+                                                directorio2[bloque][3] = 1;
+                                                cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                            }else{
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio2[bloque][1] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1;
+                                                    cacheDatos1[seccion][5] = 2;
+                                                    directorio2[bloque][1] = 0;
+                                                    directorio2[bloque][0] = 1;
+                                                    directorio2[bloque][3] = 1;
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio2[bloque][2] = 0;
+                                                    directorio2[bloque][0] = 1;
+                                                    directorio2[bloque][3] = 1;
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio2[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 2); // trae el dato a su cache
+                                                    cacheDatos2[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio2[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio2[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio2[bloque][3] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos1[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 1); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 1); // trae el dato a su cache
+                                                    cacheDatos1[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio2[bloque][1] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio2[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio2[bloque][3] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos3[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }
+                                    }
+                                }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
+                            }else { //si el bloque est en directorio3
+                                if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                                mlocks[4] = 1;
+                                // estado 0 = "C", 1 = "M", 2 = "U"
+                                if(directorio3[bloque][0] = 2){ //el bloque este uncached
+                                    falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                    directorio3[bloque][0] = 1; // Pone  estado del bloque a modificado en el direcotrio
+                                    directorio3[bloque][1] = 1; // Pone modificado en el directorio para cpu1
+                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                    mLocks = liberarRecursos(mLocks);  
+                                    siga = false;
+                                }else{
+                                    if(directorio3[bloque][0] = 0){ //si el bloque esta compartido
+                                        falloCacheDatos(bloque, dir, seccion, id_hilo);
+                                        if(directorio3[bloque][2] = 1 && directorio3[bloque][1] = 1){ //cuando el bloque esta compartido con en cache2
+                                            if(pthread_mutex_trylock(&mCacheDatos2) == 0 && pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                mlocks[2] = 1;
+                                                mlocks[1] = 1;
+                                                cacheDatos2[seccion][5] = 2;
+                                                directorio3[bloque][2] = 0;
+                                                cacheDatos1[seccion][5] = 2;
+                                                directorio3[bloque][1] = 0;
+                                               
+                                                directorio3[bloque][0] = 1;
+                                                directorio3[bloque][3] = 1;
+                                                cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                mLocks = liberarRecursos(mlocks);
+                                        siga = false;
+                                            }else{
+                                                mlocks = liberarRecursos(mlocks);
+                                            }
+                                        } else {
+                                            if(directorio3[bloque][1] = 1){ //cuando el bloque esta compartido con en cache3
+                                                if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1;
+                                                    cacheDatos3[seccion][5] = 2;
+                                                    directorio3[bloque][1] = 0;
+                                                    directorio3[bloque][0] = 1;
+                                                    directorio3[bloque][3] = 1;
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            } else {
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1;
+                                                    cacheDatos2[seccion][5] = 2;
+                                                    directorio3[bloque][2] = 0;
+                                                    directorio3[bloque][0] = 1;
+                                                    directorio3[bloque][3] = 1;
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                    mlocks = liberarRecursos(mlocks);
+                                                }
+                                            }
+                                        }
+                                    }else{ //cuando el bloque esta modificado
+                                        if(directorio3[bloque][2] == 1){ //el bloque este modificaco en cache cpu2
+                                                if(pthread_mutex_trylock(&mCacheDatos2) == 0){
+                                                    mlocks[2] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 2); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 2); // trae el dato a su cache
+                                                    cacheDatos2[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio3[bloque][2] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio3[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio3[bloque][3] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos3[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                        }else{ //el bloque este modificado en cpu3
+                                            if(pthread_mutex_trylock(&mCacheDatos1) == 0){
+                                                    mlocks[1] = 1
+                                                    guardaCacheDatosMem(bloque, dir, seccion, 3); // guarda el dato en memoria antes de invalidarlo
+                                                    guardaCacheDatosCache(bloque, seccion, 3, 1); // trae el dato a su cache
+                                                    cacheDatos3[seccion][5] = 2; //estado en cache 2 invalido
+                                                    directorio3[bloque][1] = 0; //indica que cache2 no tiene ese bloque
+                                                    directorio3[bloque][0] = 1; //pone bloque en modificado
+                                                    directorio3[bloque][3] = 1; // indica que la cache 1 tiene el bloque
+                                                    cacheDatos3[seccion][5] = 1; //pone estado en cache1 modificado
+                                                    cacheDatos3[seccion][palabraBloque] = reg3[palabra[2]];  
+                                                    mLocks = liberarRecursos(mlocks);
+                                                    siga = false;
+                                                }else{
+                                                   mLocks = liberarRecursos(mlocks); 
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }else{
+                                mLocks = liberarRecursos(mLocks);     
+                            }
+                        }
+                    }
+                }    
             
+            }
+        }
             break;
         }
     }
     break;
 }
+*/
 
 // Método que procesa la palabra con su respectiva instrucción
 // Entra en el switch que le corresponde y realiza los cambios en los registros como sea necesario
@@ -1288,7 +3537,11 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
         case 35:{
             // LW; RX, n(RY) Rx <-- M(n + (Ry)) 
             // estado 0 = "C", 1 = "M", 2 = "I"
-            switch (id_hilo) {
+            cout<< "entra al load";
+            loadWord(id_hilo,palabra);
+            
+            /*switch (id_hilo) {
+            
                 case 1:{
                     int bloque, palabraInterna, dir, seccion;
                     bool pasoInseguro = true;
@@ -1944,13 +4197,13 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                     }
                     break;
                 }
-            }
+            }*/
             break;
         }
         case 43:{
             // SW; RX, n(RY) M(n + (Ry)) <-- Rx
             // NOTA 1: FALTA EDITAR TODO A PARTIR DE AQUI
-            storeWord(id_hilo, palabra); // Llama al método que tiene toda la lógica del SW
+            //storeWord(id_hilo, palabra); // Llama al método que tiene toda la lógica del SW
             
             break;
         }
