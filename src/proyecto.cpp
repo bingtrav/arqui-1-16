@@ -1640,7 +1640,7 @@ void loadWord(int id_hilo, vector<int> palabra) {
     }
 }
     
-    
+// Metodo para realizar el LL con todos sus casos
 void loadLink(int id_hilo, vector<int> palabra) {
     loadWord(id_hilo,palabra);
     switch (id_hilo) {
@@ -1659,6 +1659,7 @@ void loadLink(int id_hilo, vector<int> palabra) {
     }
 }
 
+// Metodo para realizar el SC con todos sus casos
 void storeConditional(int id_hilo, vector<int> palabra) {
     bool siga = true;
     switch (id_hilo) {
