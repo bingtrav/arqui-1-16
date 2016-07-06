@@ -453,11 +453,11 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                 case 4:{                           
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
                         cacheDatos1[seccion][a] = memDatos1[direccion]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
-                        direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
+                        direccion++; //Aumento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
                 case 5:{                
@@ -469,8 +469,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
                     
-                    cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
                 case 6:{                
@@ -480,8 +480,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos1[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos1[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
             }       
@@ -495,8 +495,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
                 case 5:{                                       
@@ -506,8 +506,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
                 case 6:{          
@@ -517,8 +517,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos2[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos2[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
             }
@@ -532,8 +532,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
                 case 5:{                   
@@ -543,8 +543,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
                 case 6:{             
@@ -554,8 +554,8 @@ void falloCacheDatos(int id_bloque, int directorio, int direccion, int seccion, 
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                         //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier); //Barrera de control para simular los 16 ciclos del fallo de cache mientras los otros CPU's siguen trabajando
                     }
-                    cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
-                    cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
+                    //cacheDatos3[seccion][4] = id_bloque; // Se guarda el Numero de bolque que se acaba de subir a la cache en la seccion de Numero de bloque de la cache 
+                    //cacheDatos3[seccion][5] = 0; // se guarda 0 porque esta compartido
                     break;
                 }
             }
@@ -1377,7 +1377,7 @@ int cachesBloque(int directorio, int bloque, int id_hilo){
             break;
         }
         case 5:{                                                                        //Directorio 2
-            bloque= bloque-8;
+            bloque = bloque - 8;
             switch (id_hilo) {
                 case 1:{                                                                    //CPU1
                     if(directorio2[bloque][2] == 1 && directorio2[bloque][3] == 1){     //El bloque esta en ambas caches
@@ -1425,7 +1425,7 @@ int cachesBloque(int directorio, int bloque, int id_hilo){
             break;
         }
         case 6:{                                                                        //Directorio 3
-            bloque= bloque-16;
+            bloque = bloque - 16;
             switch (id_hilo) {
                 case 1:{                                                                    //CPU1
                     //cout<<resultado<<endl;
@@ -1471,9 +1471,9 @@ int cachesBloque(int directorio, int bloque, int id_hilo){
                     }
                     break;
                 }
-            }    
-        }
+            } 
             break;
+        }
     }
     //cout<<resultado<<endl;
     return resultado;
@@ -1623,6 +1623,22 @@ void storeWord(int id_hilo, vector<int> palabra) {
             break;
         }
     }
+    if(palabra[3]==196){
+        cout<<palabra[3]<<" sw esta cache: "<< estaCache(cachePrin,seccion,bloque)<<endl;
+        cout<<palabra[3]<<" sw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
+        cout<<palabra[3]<<" sw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
+        cout<<palabra[3]<<" sw esta inv: "<< estaInvalido(cachePrin,seccion)<<endl;
+        cout<<palabra[3]<<" sw cacheprin: "<<cachePrin<<endl;
+        cout<<palabra[3]<<" sw cacheaux1: "<<cacheAux1<<endl;
+        cout<<palabra[3]<<" sw cacheaux2: "<<cacheAux2<<endl;
+        cout<<palabra[3]<<" sw directorio: "<<directorio<<endl;
+        cout<<palabra[3]<<" sw bloque: "<<bloque<<endl;
+        cout<<palabra[3]<<" sw esta moddir: "<< estaModificadodir(directorio,bloque)<<endl;
+        cout<<palabra[3]<<" sw esta comdir: "<< estaCompartidodir(directorio,bloque)<<endl;
+        cout<<palabra[3]<<" sw esta uncdir: "<< estaUncacheddir(directorio,bloque)<<endl;
+        int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);    //pregunta las caches donde esta el bloque compartido 
+        cout<<"sw cachesInvalidar: " << cachesinvalidar<<endl;
+    }
     cout<<palabra[3]<<": sw "<<  id_hilo << ": cpu"<<endl;
     /*cout<<palabra[3]<<" sw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
     cout<<palabra[3]<<" sw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
@@ -1636,6 +1652,7 @@ void storeWord(int id_hilo, vector<int> palabra) {
     cout<<palabra[3]<<" sw esta comdir: "<< estaCompartidodir(directorio,bloque)<<endl;
     cout<<palabra[3]<<" sw esta uncdir: "<< estaUncacheddir(directorio,bloque)<<endl;
     */
+    
     while(siga){    //mientras siga = true entra en el ciclo
     
         if(reservarCache(cachePrin)){                                                           //reserva cacheprincipal
@@ -1746,12 +1763,12 @@ void storeWord(int id_hilo, vector<int> palabra) {
                             int direccion2 = bloqueAguardar * 16 / 4;
                             if(directorio == directorio2){
                                 guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                                ponerUncached(bloqueAguardar,directorio);
+                                ponerUncached(bloqueAguardar,directorio2);
                             }else{
                                 if(reservarDirectorio(bloqueAguardar)){
                                     mLocks[directorio2] = 1;
                                     guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                                    ponerUncached(bloqueAguardar,directorio);
+                                    ponerUncached(bloqueAguardar,directorio2);
                                 }else{
                                     mLocks = liberarRecursos(mLocks);
                                     detener = true;
@@ -1965,12 +1982,12 @@ void loadWord(int id_hilo, vector<int> palabra) {
                         int direccion2 = bloqueAguardar * 16 / 4;
                         if(directorio == directorio2){
                             guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                            ponerUncached(bloqueAguardar,directorio);
+                            ponerUncached(bloqueAguardar,directorio2);
                         }else{
                             if(reservarDirectorio(bloqueAguardar)){
                                 mLocks[directorio2] = 1;
                                 guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                                ponerUncached(bloqueAguardar,directorio);
+                                ponerUncached(bloqueAguardar,directorio2);
                             }else{
                                 mLocks = liberarRecursos(mLocks);
                                 detener = true;
@@ -1978,14 +1995,14 @@ void loadWord(int id_hilo, vector<int> palabra) {
                         }
                     }
                     if(!detener){
-                        if(!estaModificadodir(directorio, bloque)){
+                        if(!estaModificadodir(directorio, bloque)){ //esta uncache y esta compartido en el directorio
                             falloCacheDatos(bloque,directorio, dir, seccion, id_hilo);
                             directorioCompartido(directorio,bloque,cachePrin);
                             leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                             siga = false;
                             mLocks = liberarRecursos(mLocks);
                             //cout << "lw guarda si no esta en cache o esta invalido y no esta modificaco en directorio" << endl;
-                        }else{ 
+                        }else{ //esta modificado en directorio
                             int cachesmodificadas = cachesBloque(directorio,bloque,cachePrin);
                             switch (cachesmodificadas) {                                                  
                                 case 1:{                            
@@ -2021,7 +2038,6 @@ void loadWord(int id_hilo, vector<int> palabra) {
                                     break;
                                 }
                             }
-                            
                         }
                     }
                 }else{
@@ -4111,7 +4127,9 @@ void *CPU(void *param)
                 pthread_barrier_wait(&barrier);
             }
             while(cpu1 || cpu2 || cpu3){ 
-                cout<<"fin CPU1"<<endl;
+                if(cpu1){
+                    cout<<"fin CPU1"<<endl;
+                }
                 pthread_barrier_wait(&barrier);
                 cpu1 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
@@ -4130,7 +4148,9 @@ void *CPU(void *param)
                 pthread_barrier_wait(&barrier);
             }
             while(cpu1 || cpu2 || cpu3){ 
-                cout<<"fin CPU2"<<endl;
+                if(cpu2){
+                    cout<<"fin CPU2"<<endl;
+                }
                 pthread_barrier_wait(&barrier);
                 cpu2 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
@@ -4149,7 +4169,9 @@ void *CPU(void *param)
                 pthread_barrier_wait(&barrier);
             }
            while(cpu1 || cpu2 || cpu3){ 
-                cout<<"fin CPU3"<<endl;
+                if(cpu3){
+                    cout<<"fin CPU3"<<endl;
+                }
                 pthread_barrier_wait(&barrier);
                 cpu3 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
