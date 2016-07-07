@@ -1,8 +1,31 @@
-hilo profe  =   hilo nuestro
-0               4    
-1               1
-2               2
-3               7
-4               3
-5               5
-6               6
+hilo profe  =   hilo nuestro    Cpu     necesita que terminen
+0               4               1       
+1               1               2       0 
+2               2               3       0
+3               7               1       0 1
+4               3               2       0
+5               5               3       0
+6               6               1       0
+
+
+
+
+
+m = 1, 0, 1,
+
+r1 = 1 
+aca:
+cpu1 lw carga  1 en r1
+                            cpu2 sw guarda 0 en m
+cpu1 sw guarda 1 en m
+salta aca si r1 != 0
+
+m = 1, 0, 1,
+
+r1 = 1 
+aca:
+                           cpu2 sw guarda 0 en m
+cpu1 lw carga  1 en r1
+cpu1 sw guarda 1 en m
+                           cpu2 sw guarda 0 en m
+salta aca si r1 != 0

@@ -17,6 +17,8 @@ using namespace std;
 // Constante con el número de hilos = número de CPU's
 #define numHilos 3
 
+pthread_t hilo1, hilo2, hilo3; // Se crean los 3 hilos que manejan los CPU
+
 // Número de hilos que se manejarán en lso 3 CPU's
 int subHilos;
 
@@ -77,7 +79,7 @@ bool cacheDisponible[3];
 
 // Directorio que maneja informacion y estado de los Bloques que tiene cada CPU
 /*
-    Cache de Datos
+    directorio
         ----------------------------------------------------------------
         |  estado 0 = "C", 1 = "M", 2 = "U"  | CPUS   | 
         ----------------------------------------------------------------
@@ -152,6 +154,14 @@ void llenaMemDatos() {
         memDatos2[a] = 1;
         memDatos3[a] = 1;
     }
+    memDatos3[1] = 0;
+    memDatos2[0] = 0;
+    memDatos2[1] = 0;
+    memDatos2[2] = 0;
+    memDatos2[3] = 0;
+    memDatos2[4] = 0;
+    memDatos2[5] = 0;
+    
 }
 
 void inicializaDir() {
@@ -164,6 +174,17 @@ void inicializaDir() {
             directorio2[a][b] = 0;
             directorio3[a][b] = 0;
         }
+    }
+}
+
+void inicializaCacheDatos() {
+    for(int a = 0; a < 4; a++) {
+        cacheDatos1[a][4] = -13;
+        cacheDatos2[a][4] = -13;
+        cacheDatos3[a][4] = -1;
+        cacheDatos1[a][5] = 3;
+        cacheDatos2[a][5] = 3;
+        cacheDatos3[a][5] = 3;
     }
 }
 
@@ -738,7 +759,7 @@ void guardaCacheDatosMem(int id_bloque, int direccion, int seccion, int id_cache
                 if(id_bloque < 16) {
                     direccion = direccion - 32;
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        memDatos2[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        memDatos2[direccion] = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                      }
                      for(int a = 0; a < 2; a++) { // Simulación de los 16 ciclos del fallo de caché
@@ -747,7 +768,7 @@ void guardaCacheDatosMem(int id_bloque, int direccion, int seccion, int id_cache
                 } else {
                     direccion = direccion - 64;
                     for(int a = 0; a < 4; a++) { // Simulación de los 16 ciclos del fallo de caché
-                        memDatos3[direccion] = cacheDatos3[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
+                        memDatos3[direccion] = cacheDatos2[seccion][a]; //Guarda en la sección especificada de la cache del CPU1 los valores que estan en el bloque de la direccion de la memoria principal   
                         direccion++; //Aunmento de la direccion Al espacio de memoria siguiente
                      }
                      for(int a = 0; a < 2; a++) { // Simulación de los 16 ciclos del fallo de caché
@@ -792,7 +813,7 @@ void guardaCacheDatosMem(int id_bloque, int direccion, int seccion, int id_cache
     }
 }
 
-// Método que guarda el dato de la caché del respectivo CPU a memoria para LW, SC, SW, LL
+// Método que trae el bloque de la caché remota a la respectiva caché para LW, SC, SW, LL
 void guardaCacheDatosCache(int id_bloque, int seccion, int id_cacheDestino, int id_cacheRemota) {
     switch (id_cacheDestino)
       {
@@ -953,6 +974,7 @@ vector<int> buscarBloque(int id_hilo) {
 // Metodo que se encarga de reservar caches
 bool reservarCache(int cache) {
     bool resultado= false;
+    
     pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     if(cache == 1) {
         if(pthread_mutex_trylock(&mCacheDatos1) == 0){
@@ -968,6 +990,30 @@ bool reservarCache(int cache) {
         if(pthread_mutex_trylock(&mCacheDatos3) == 0){
             resultado = true;
         }
+    }
+
+    return resultado;
+}
+
+// Metodo que se encarga de reservar directorios
+bool reservarDirectorio(int bloque) {
+    bool resultado= false;
+    
+    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
+    if(bloque < 8) {                                    //si el bloque esta en dir1
+        if(pthread_mutex_trylock(&mDirectorio1) == 0){
+            resultado = true;
+        }
+    }else{
+        if(bloque < 16) {                               //si el bloque esta en dir2
+            if(pthread_mutex_trylock(&mDirectorio2) == 0){
+                resultado = true;
+            }
+        }else{                                          //si el bloque esta en dir3
+            if(pthread_mutex_trylock(&mDirectorio3) == 0){
+                resultado = true;
+            }
+        }    
     }
     return resultado;
 }
@@ -1111,6 +1157,7 @@ bool estaInvalido(int cache, int seccion){
 //Metodo que dice si el dato esta compartido en directorio
 bool estaCompartidodir(int directorio, int bloque){
     bool esta = false;
+    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     switch (directorio) {
         case 4:{                           
             if(directorio1[bloque][0] == 0){
@@ -1139,6 +1186,7 @@ bool estaCompartidodir(int directorio, int bloque){
 //Metodo que dice si el dato esta modificado en directorio
 bool estaModificadodir(int directorio, int bloque){
     bool esta = false;
+    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     switch (directorio) {
         case 4:{                           
             if(directorio1[bloque][0] == 1){
@@ -1167,6 +1215,7 @@ bool estaModificadodir(int directorio, int bloque){
 //Metodo que dice si el dato esta uncached en directorio
 bool estaUncacheddir(int directorio, int bloque){
     bool esta = false;
+    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     switch (directorio) {
         case 4:{                            
             if(directorio1[bloque][0] == 2){
@@ -1190,6 +1239,25 @@ bool estaUncacheddir(int directorio, int bloque){
         }
     }
     return esta;
+}
+
+void quitaCompartidoDir(int bloqueAguardar, int directorio, int cache){
+    switch (directorio) {
+        case 4:{
+            directorio1[bloqueAguardar][cache] = 0;
+            break;
+        }
+        case 5:{
+            bloqueAguardar = bloqueAguardar - 8;
+            directorio2[bloqueAguardar][cache] = 0;
+            break;
+        }
+        case 6:{
+            bloqueAguardar = bloqueAguardar - 16;
+            directorio3[bloqueAguardar][cache] = 0;
+            break;
+        }
+    }
 }
 
 void ponerUncached(int bloqueAguardar, int directorio){
@@ -1227,7 +1295,6 @@ void guardarDato(int id_hilo,int bloque, int seccion, int palabraBloque, int reg
             cacheDatos1[seccion][palabraBloque] = reg1[registro];
             cacheDatos1[seccion][4] = bloque;
             cacheDatos1[seccion][5] = 1;
-            
             break;
         }
         case 2:{                            
@@ -1268,13 +1335,12 @@ void leePalabra(int cache, int bloque,int seccion, int palabraBloque, int regist
             break;
         }
     }
-    
 }
 
 
 
 
-//metodo que dice que directorio esta el bloque
+//metodo que dice en que directorio esta el bloque
 int directorioBloque(int bloque){
     int resultado = 0;
     if(bloque < 8) {                                    //si el bloque esta en dir1
@@ -1289,30 +1355,7 @@ int directorioBloque(int bloque){
     return resultado;
 }
 
-// Metodo que se encarga de reservar directorios
-bool reservarDirectorio(int bloque) {
-    bool resultado= false;
-    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
-    if(bloque < 8) {                                    //si el bloque esta en dir1
-        if(pthread_mutex_trylock(&mDirectorio1) == 0){
-            resultado = true;
-        }
-    }else{
-        if(bloque < 16) {                               //si el bloque esta en dir2
-            if(pthread_mutex_trylock(&mDirectorio2) == 0){
-                resultado = true;
-            }
-        }else{                                          //si el bloque esta en dir3
-                if(pthread_mutex_trylock(&mDirectorio3) == 0){
-                    resultado = true;
-                }
-            }    
-        
-    }
-    
-    
-    return resultado;
-}
+
 
 /*metodo que retorna en que caches esta el bloque
     0 = ninguna cache
@@ -1321,7 +1364,7 @@ bool reservarDirectorio(int bloque) {
     3 = si esta en ambas
 */
 int cachesBloque(int directorio, int bloque, int id_hilo){
-    
+    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     int resultado = 0;
     /*cout<<"directorio"<<directorio<<endl;
     cout<<"hilo"<<id_hilo<<endl;
@@ -1479,10 +1522,26 @@ int cachesBloque(int directorio, int bloque, int id_hilo){
     return resultado;
 }
     
+void ponerCompartido(int cache, int seccion){
+    switch (cache) {
+        case 1:{                    
+            cacheDatos1[seccion][5] = 0;
+            break;
+        }
+        case 2:{                            
+            cacheDatos2[seccion][5] = 0;
+            break;
+        }
+        case 3:{                            
+            cacheDatos3[seccion][5] = 0;
+            break;
+        }
+    }
+}
 
 //metodo que invalida el bloque de la seccion de la cache 
 void invalidarCache(int cache, int seccion){
-    
+    pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     switch (cache) {
         case 1:{                    
             cacheDatos1[seccion][5] = 2;
@@ -1500,7 +1559,7 @@ void invalidarCache(int cache, int seccion){
 }
 
 //devuelve el bloque de la seccion que esta modificada en cache
-int PedirBloqueModificado(int cache, int seccion){
+int pedirBloqueModificado(int cache, int seccion){
     int respuesta;
     switch (cache) {
         case 1:{                    
@@ -1559,7 +1618,6 @@ void actualizaDirSW(int directorio, int cache, int bloque){
             break;
         }
     }
-    
 }
 
 //metodo que actualiza estado del bloque en directorios y deja como unico dato el que acaba de modificar
@@ -1583,11 +1641,9 @@ void directorioCompartido(int directorio, int bloque, int cache){
             break;
         }
     }
-    
 }
 
-
-
+// Método que realiza el STORE WORD.
 void storeWord(int id_hilo, vector<int> palabra) {
     // Vector para los recursos
     
@@ -1597,7 +1653,7 @@ void storeWord(int id_hilo, vector<int> palabra) {
     vector<int> mLocks (7);
     bool siga = true;
     int dir = reg1[palabra[1]] + palabra[3];    //direccion donde esta el bloque
-    int bloque = dir/16;                        //numero de bloque que se quiere guardar
+    int bloque = (int) dir/16;                  //numero de bloque que se quiere guardar
     int palabraBloque = dir%16;                 //Numero de palabra que se quiere guardar
     int seccion = bloque%4;                     //seccion de la cache donde el bloque cae
     palabraBloque = palabraBloque/4;
@@ -1605,6 +1661,22 @@ void storeWord(int id_hilo, vector<int> palabra) {
     int directorio = directorioBloque(bloque);  //Directorio donde esta el bloque que se quiere modificar
     int cachePrin = id_hilo;                //cache donde se va a guardar el dato
     int cacheAux1, cacheAux2;               //caches donde puede estar el dato compartido o modificado
+    int dato;
+    
+    switch (id_hilo) {
+        case 1:{                            //caso que CPU1 sea el que quiere guardar
+            dato = reg1[palabra[2]];
+            break;
+        }
+        case 2:{                            //caso que CPU2 sea el que quiere guardar
+            dato = reg2[palabra[2]];
+            break;
+        }
+        case 3:{                            //caso que CPU3 sea el que quiere guardar
+            dato = reg3[palabra[2]];
+            break;
+        }
+    }
     
     switch (id_hilo) {
         case 1:{                            //caso que CPU1 sea el que quiere guardar
@@ -1623,7 +1695,8 @@ void storeWord(int id_hilo, vector<int> palabra) {
             break;
         }
     }
-    if(palabra[3]==196){
+    
+    /*if(palabra[3]==128 && id_hilo==2){
         cout<<palabra[3]<<" sw esta cache: "<< estaCache(cachePrin,seccion,bloque)<<endl;
         cout<<palabra[3]<<" sw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
         cout<<palabra[3]<<" sw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
@@ -1638,8 +1711,10 @@ void storeWord(int id_hilo, vector<int> palabra) {
         cout<<palabra[3]<<" sw esta uncdir: "<< estaUncacheddir(directorio,bloque)<<endl;
         int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);    //pregunta las caches donde esta el bloque compartido 
         cout<<"sw cachesInvalidar: " << cachesinvalidar<<endl;
-    }
-    cout<<palabra[3]<<": sw "<<  id_hilo << ": cpu"<<endl;
+    }*/
+    /*if(bloque==12){
+        cout<<"SW MODIFICA BLOQUE 12 "<<palabra[3]<<endl;
+    }*/
     /*cout<<palabra[3]<<" sw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
     cout<<palabra[3]<<" sw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
     cout<<palabra[3]<<" sw esta inv: "<< estaInvalido(cachePrin,seccion)<<endl;
@@ -1654,7 +1729,6 @@ void storeWord(int id_hilo, vector<int> palabra) {
     */
     
     while(siga){    //mientras siga = true entra en el ciclo
-    
         if(reservarCache(cachePrin)){                                                           //reserva cacheprincipal
             mLocks[cachePrin] = 1;                                                              //actualiza vector para liberacion de recursos
             //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
@@ -1727,8 +1801,7 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                 if(reservarCache(cacheAux1)){
                                     mLocks[cacheAux1] = 1;
                                     if(reservarCache(cacheAux2)){
-                                        mLocks[cacheAux2] = 1;
-                                        mLocks[cacheAux2] = 1;                                     
+                                        mLocks[cacheAux2] = 1;                                 
                                         invalidarCache(cacheAux1,seccion);
                                         //cout<<"sw invalida cacheaux1"<<endl;
                                         invalidarCache(cacheAux2,seccion);
@@ -1757,22 +1830,61 @@ void storeWord(int id_hilo, vector<int> palabra) {
                     if(reservarDirectorio(bloque)){                                             //reserva el directorio donde esta el bloque que se quiere modificar
                         mLocks[directorio] = 1;
                         bool detener = false;
+                        //Es para caerle encima al bloque y quede coherente 
                         if(estaModificado(cachePrin,seccion)){
-                            int bloqueAguardar = PedirBloqueModificado(cachePrin,seccion);
-                            int directorio2 = directorioBloque(bloqueAguardar); 
+                            //cout<<palabra[3]<<"SW el dato esta modificado"<<endl;
+                            int bloqueAguardar = pedirBloqueModificado(cachePrin,seccion);
+                            int directorioNuevo = directorioBloque(bloqueAguardar); 
                             int direccion2 = bloqueAguardar * 16 / 4;
-                            if(directorio == directorio2){
+                            //cout<<"SW bloque a guardar: "<< bloqueAguardar<<endl;
+                            //cout<<"SW directorio 2:" << directorio2<<endl;
+                            //cout<<"SW direcion 2:" << direccion2<<endl;
+
+                            if(directorio == directorioNuevo){
                                 guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                                ponerUncached(bloqueAguardar,directorio2);
+                                ponerUncached(bloqueAguardar,directorioNuevo);
+                                invalidarCache(cachePrin,seccion); //NO SE Si ESTA BIEN
                             }else{
                                 if(reservarDirectorio(bloqueAguardar)){
-                                    mLocks[directorio2] = 1;
+                                    mLocks[directorioNuevo] = 1;
                                     guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                                    ponerUncached(bloqueAguardar,directorio2);
+                                    ponerUncached(bloqueAguardar,directorioNuevo);
+                                    invalidarCache(cachePrin,seccion);
                                 }else{
                                     mLocks = liberarRecursos(mLocks);
                                     detener = true;
                                 }    
+                            }
+                        }else{
+                            if(estaCompartido(cachePrin,seccion)){
+                                int bloqueAguardar = pedirBloqueModificado(cachePrin,seccion);
+                                int directorioNuevo = directorioBloque(bloqueAguardar); 
+                                int direccion2 = bloqueAguardar * 16 / 4;
+                                if(directorio == directorioNuevo){
+                                    int cachescompartidas = cachesBloque(directorioNuevo,bloqueAguardar,cachePrin); //si es 0 solo el lo tiene 
+                                    if(cachescompartidas == 0){
+                                        ponerUncached(bloqueAguardar,directorioNuevo); 
+                                        invalidarCache(cachePrin,seccion);   
+                                    }else{
+                                        quitaCompartidoDir(bloqueAguardar,directorioNuevo,cachePrin);
+                                        invalidarCache(cachePrin,seccion);
+                                    }
+                                }else{
+                                    if(reservarDirectorio(bloqueAguardar)){
+                                        mLocks[directorioNuevo] = 1;
+                                        int cachescompartidas = cachesBloque(directorioNuevo,bloqueAguardar,cachePrin); //si es 0 solo el lo tiene 
+                                        if(cachescompartidas == 0){
+                                            ponerUncached(bloqueAguardar,directorioNuevo);    
+                                            invalidarCache(cachePrin,seccion);
+                                        }else{
+                                            quitaCompartidoDir(bloqueAguardar,directorioNuevo,cachePrin);
+                                            invalidarCache(cachePrin,seccion);
+                                        }
+                                    }else{
+                                        mLocks = liberarRecursos(mLocks);
+                                        detener = true;
+                                    }
+                                }
                             }
                         }
                         if(!detener){
@@ -1916,6 +2028,7 @@ void storeWord(int id_hilo, vector<int> palabra) {
             }
         }
     }
+    cout<<"sw guarda dato "<<dato<<" en "<< palabra[3] <<" cpu:" << id_hilo<<endl;
     //cout<<"fin sw";
     //cout<<palabra[3]<<endl;
 }
@@ -1938,7 +2051,7 @@ void loadWord(int id_hilo, vector<int> palabra) {
     int directorio = directorioBloque(bloque);  //Directorio donde esta el bloque que se quiere modificar
     int cachePrin = id_hilo;                //cache donde se va a guardar el dato
     int cacheAux1, cacheAux2;               //caches donde puede estar el dato compartido o modificado
-    
+    int dato;
     switch (id_hilo) {
         case 1:{                            //caso que CPU1 sea el que quiere guardar
             cacheAux1 = 2;
@@ -1956,7 +2069,13 @@ void loadWord(int id_hilo, vector<int> palabra) {
             break;
         }
     }
-    cout<<palabra[3]<<": lw "<<  id_hilo << ": cpu" << endl;
+    /*if(bloque==12){
+        cout<<"LW MODIFICA BLOQUE 12 "<<palabra[3]<<endl;
+    }*/
+    /*if(palabra[3] == 260){
+        cout<<"LW: "<<palabra[3]<<" cpu:" << id_hilo<<endl;
+    }*/
+    //cout<<"LW: "<<palabra[3]<<" cpu:" << id_hilo<<endl;
     /*cout<<"lw esta cache: "<< estaCache(cachePrin,seccion,bloque)<<endl;
     cout<<"lw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
     cout<<"lw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
@@ -1977,25 +2096,59 @@ void loadWord(int id_hilo, vector<int> palabra) {
                     //cout << "lw reserva directorio del bloque" << endl; 
                     mLocks[directorio] = 1;
                     if(estaModificado(cachePrin,seccion)){
-                        int bloqueAguardar = PedirBloqueModificado(cachePrin,seccion);
-                        int directorio2 = directorioBloque(bloqueAguardar); 
+                        //cout<<"LW el dato esta modificado"<<endl;
+                        int bloqueAguardar = pedirBloqueModificado(cachePrin,seccion);
+                        int directorioNuevo = directorioBloque(bloqueAguardar); 
                         int direccion2 = bloqueAguardar * 16 / 4;
-                        if(directorio == directorio2){
+                        if(directorio == directorioNuevo){
                             guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                            ponerUncached(bloqueAguardar,directorio2);
+                            ponerUncached(bloqueAguardar,directorioNuevo);
+                            invalidarCache(cachePrin,seccion);
                         }else{
                             if(reservarDirectorio(bloqueAguardar)){
-                                mLocks[directorio2] = 1;
+                                mLocks[directorioNuevo] = 1;
                                 guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
-                                ponerUncached(bloqueAguardar,directorio2);
+                                ponerUncached(bloqueAguardar,directorioNuevo);
+                                invalidarCache(cachePrin,seccion);
                             }else{
                                 mLocks = liberarRecursos(mLocks);
                                 detener = true;
                             }    
                         }
+                    }else{
+                        if(estaCompartido(cachePrin,seccion)){
+                            int bloqueAguardar = pedirBloqueModificado(cachePrin,seccion);
+                            int directorioNuevo = directorioBloque(bloqueAguardar); 
+                            int direccion2 = bloqueAguardar * 16 / 4;
+                            if(directorio == directorioNuevo){
+                                int cachescompartidas = cachesBloque(directorioNuevo,bloqueAguardar,cachePrin); //si es 0 solo el lo tiene 
+                                if(cachescompartidas == 0){
+                                    ponerUncached(bloqueAguardar,directorioNuevo);  
+                                    invalidarCache(cachePrin,seccion);
+                                }else{
+                                    quitaCompartidoDir(bloqueAguardar,directorioNuevo,cachePrin);
+                                    invalidarCache(cachePrin,seccion);
+                                }
+                            }else{
+                                if(reservarDirectorio(bloqueAguardar)){
+                                    mLocks[directorioNuevo] = 1;
+                                    int cachescompartidas = cachesBloque(directorioNuevo,bloqueAguardar,cachePrin); //si es 0 solo el lo tiene 
+                                    if(cachescompartidas == 0){
+                                        ponerUncached(bloqueAguardar,directorioNuevo);  
+                                        invalidarCache(cachePrin,seccion);
+                                    }else{
+                                        quitaCompartidoDir(bloqueAguardar,directorioNuevo,cachePrin);
+                                        invalidarCache(cachePrin,seccion);
+                                    }
+                                }else{
+                                    mLocks = liberarRecursos(mLocks);
+                                    detener = true;
+                                }
+                            }
+                        }
                     }
                     if(!detener){
-                        if(!estaModificadodir(directorio, bloque)){ //esta uncache y esta compartido en el directorio
+                        if(!estaModificadodir(directorio, bloque)){ //esta uncached y esta compartido en el directorio
                             falloCacheDatos(bloque,directorio, dir, seccion, id_hilo);
                             directorioCompartido(directorio,bloque,cachePrin);
                             leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
@@ -2010,6 +2163,7 @@ void loadWord(int id_hilo, vector<int> palabra) {
                                         mLocks[cacheAux1] = 1;
                                         guardaCacheDatosMem(bloque, dir, seccion, cacheAux1);           // guarda el dato en memoria antes de invalidarlo
                                         guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux1);   // trae el dato de la cacheaux1 a la cache principal
+                                        ponerCompartido(cacheAux1,seccion);
                                         directorioCompartido(directorio,bloque,cachePrin);
                                         leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                                         siga = false;
@@ -2026,6 +2180,7 @@ void loadWord(int id_hilo, vector<int> palabra) {
                                         mLocks[cacheAux2] = 1;
                                         guardaCacheDatosMem(bloque, dir, seccion, cacheAux2);           // guarda el dato en memoria antes de invalidarlo
                                         guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux2);   // trae el dato de la cacheaux2 a la cache principal
+                                        ponerCompartido(cacheAux2,seccion);
                                         directorioCompartido(directorio,bloque,cachePrin);
                                         leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                                         siga = false;
@@ -2047,6 +2202,21 @@ void loadWord(int id_hilo, vector<int> palabra) {
             }
         }
     }
+    switch (id_hilo) {
+        case 1:{                            //caso que CPU1 sea el que quiere guardar
+            dato = reg1[palabra[2]];
+            break;
+        }
+        case 2:{                            //caso que CPU2 sea el que quiere guardar
+            dato = reg2[palabra[2]];
+            break;
+        }
+        case 3:{                            //caso que CPU3 sea el que quiere guardar
+            dato = reg3[palabra[2]];
+            break;
+        }
+    }
+    cout<<"LW carga dato "<<dato<<" en "<< palabra[3] <<" cpu:" << id_hilo<<endl;
     //cout<<"fin load";
     //cout<<palabra[3]<<endl;
 }
@@ -2134,7 +2304,6 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                     }    
                 }
             }
-            
             break;
         }
         case 2:{
@@ -3760,7 +3929,7 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
                     break;
                 }
     }
-    switch (palabra[0] )
+    switch (palabra[0])
         {
          case 8:{
             //DADDI; RX, RY, #n; Rx <-- (Ry) + n
@@ -3942,10 +4111,6 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             }
             break;
         }
-        
-        /*****************************************/
-        /* REALIZAR EL LOAD PARA HABLAR EL JUEVES*/
-        /*****************************************/
         case 35:{
             // LW; RX, n(RY) Rx <-- M(n + (Ry)) 
             // estado 0 = "C", 1 = "M", 2 = "I"
@@ -3980,14 +4145,17 @@ void procesarPalabra(vector<int> palabra, int id_hilo) {
             switch (id_hilo) {
                 case 1:{
                     estado1 = 0;
+                    cout<<"El hilo: "<<cntxActual1<<" termino del cpu1"<<endl;
                     break;
                 }
                 case 2:{
                     estado2 = 0;
+                    cout<<"El hilo: "<<cntxActual2<<" termino del cpu2"<<endl;
                     break;
                 }
                 case 3:{
                     estado3 = 0;
+                    cout<<"El hilo: "<<cntxActual3<<" termino del cpu3"<<endl;
                     break;
                 }
             }
@@ -4129,13 +4297,12 @@ void *CPU(void *param)
             while(cpu1 || cpu2 || cpu3){ 
                 if(cpu1){
                     cout<<"fin CPU1"<<endl;
+                    //imprimircontextos();
                 }
                 pthread_barrier_wait(&barrier);
                 cpu1 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
             }
-            
-            
             break;
         }
         case 2:{
@@ -4150,13 +4317,12 @@ void *CPU(void *param)
             while(cpu1 || cpu2 || cpu3){ 
                 if(cpu2){
                     cout<<"fin CPU2"<<endl;
+                    //imprimircontextos();
                 }
                 pthread_barrier_wait(&barrier);
                 cpu2 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
             }
-            
-            
             break;
         }
         case 3:{
@@ -4171,22 +4337,21 @@ void *CPU(void *param)
            while(cpu1 || cpu2 || cpu3){ 
                 if(cpu3){
                     cout<<"fin CPU3"<<endl;
+                    //imprimircontextos();
                 }
                 pthread_barrier_wait(&barrier);
                 cpu3 = false;
                 pthread_barrier_wait(&barrier); //Barrera de control para cuando CPU1 termina sus hilos, que espere a los otros mientras teminan
             }
-            
             break;
         }
-            
     }
 }
 
 int main (int argc, char** argv) {
     //cargarHilos(7);
     //imprimirMemP();
-    pthread_t hilo1, hilo2, hilo3; // Se crean los 3 hilos que manejan los CPU
+    //pthread_t hilo1, hilo2, hilo3; // Se crean los 3 hilos que manejan los CPU
     int ret;
     cout << "Por favor digite el número de hilos que tendrá el programa:" << endl;
     cin >> subHilos; // Se guarda el número de hilos que el programa va a ejecutar
@@ -4194,9 +4359,10 @@ int main (int argc, char** argv) {
     //imprimirMemP();
     llenaMemDatos();
     inicializaDir();
+    inicializaCacheDatos();
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum; // Se guarda le quantum global que se usará en el programa
-    
+    //imprimircontextos();
     pthread_mutex_init(&mCacheDatos1, NULL);
     pthread_mutex_init(&mCacheDatos2, NULL);
     pthread_mutex_init(&mCacheDatos3, NULL);
