@@ -80,11 +80,11 @@ bool cacheDisponible[3];
 // Directorio que maneja informacion y estado de los Bloques que tiene cada CPU
 /*
     directorio
-        ----------------------------------------------------------------
+        -----------------------------------------------
         |  estado 0 = "C", 1 = "M", 2 = "U"  | CPUS   | 
-        ----------------------------------------------------------------
+        -----------------------------------------------
         |                 0                  |  1..3  |    
-        ----------------------------------------------------------------
+        -----------------------------------------------
 */
 int directorio1[8][4];
 int directorio2[8][4];
@@ -154,9 +154,9 @@ void llenaMemDatos() {
         memDatos2[a] = 1;
         memDatos3[a] = 1;
     }
-    memDatos1[0] = 0;
-    /*
-    memDatos3[1] = 0;
+    //memDatos1[0] = 0;
+    
+    /*memDatos3[1] = 0;
     memDatos2[0] = 0;
     memDatos2[1] = 0;
     memDatos2[2] = 0;
@@ -273,6 +273,68 @@ void imprimircontextos(){
     }
 }
 
+void imprimirCacheDatos(int cache) {
+    switch(cache) {
+        case 1:
+            cout << "Cache de datos 1:" << endl; 
+            for (int a = 0; a < 4; a++) {
+                for(int b = 0; b < 5; b++) {
+                    cout << cacheDatos1[a][b] << " - "; 
+                }
+                switch(cacheDatos1[a][6]) {
+                    case 0:
+                        cout << " C " << endl;
+                        break;
+                    case 1:
+                        cout << " M " << endl;
+                        break;
+                    case 2:
+                        cout << " I " << endl;
+                        break;
+                } 
+            }
+            break;
+        case 2:
+            cout << "Cache de datos 2:" << endl; 
+            for (int a = 0; a < 4; a++) {
+                for(int b = 0; b < 5; b++) {
+                    cout << cacheDatos2[a][b] << " - "; 
+                }
+                switch(cacheDatos2[a][6]) {
+                    case 0:
+                        cout << " C " << endl;
+                        break;
+                    case 1:
+                        cout << " M " << endl;
+                        break;
+                    case 2:
+                        cout << " I " << endl;
+                        break;
+                }
+            }
+            break;
+        case 3:
+            cout << "Cache de datos 3:" << endl; 
+            for (int a = 0; a < 4; a++) {
+                for(int b = 0; b < 5; b++) {
+                    cout << cacheDatos3[a][b] << " - "; 
+                }
+                switch(cacheDatos3[a][6]) {
+                    case 0:
+                        cout << " C " << endl;
+                        break;
+                    case 1:
+                        cout << " M " << endl;
+                        break;
+                    case 2:
+                        cout << " I " << endl;
+                        break;
+                }
+            } 
+            break;
+    }
+}
+
 // Método que imprime en pantalla el estado de los registros de cada CPU
 void imprimirInfoHilo() {
     cout << endl << "Cpu1: ";
@@ -291,10 +353,12 @@ void imprimirInfoHilo() {
         }
     }
     
+    imprimirCacheDatos(1);
+    
     cout << endl << "Cpu2: ";
     cout << endl;
     for(int i= 0; i < 4; i++){
-        if(contextos3[i][34] != 0) {
+        if(contextos2[i][34] != 0) {
             cout << endl << "Registros del Hilo: " << contextos2[i][36];
             cout << endl;
             for(int j = 1; j < 33; j++) {
@@ -306,6 +370,9 @@ void imprimirInfoHilo() {
             cout << endl;
         }
     }
+    
+    
+    imprimirCacheDatos(2);
     
     cout << endl << "Cpu3: ";
     cout << endl;
@@ -322,6 +389,8 @@ void imprimirInfoHilo() {
             cout << endl;
         }
     }
+    
+    imprimirCacheDatos(3);
         
 }
 
@@ -1374,11 +1443,6 @@ int directorioBloque(int bloque){
 int cachesBloque(int directorio, int bloque, int id_hilo){
     pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
     int resultado = 0;
-    /*cout<<"directorio"<<directorio<<endl;
-    cout<<"hilo"<<id_hilo<<endl;
-    cout<<"bloque"<<bloque<<endl;
-    cout<<"cosa"<<directorio3[bloque][3]<<endl;
-    */
     switch (directorio) {
         case 4:{                                                                        //Directorio 1       
             switch (id_hilo) {
@@ -1491,7 +1555,6 @@ int cachesBloque(int directorio, int bloque, int id_hilo){
                             }   
                         }   
                     }
-                    //cout<<resultado<<endl;
                     break;
                 }   
                 case 2:{                                                                //CPU2
@@ -1526,7 +1589,6 @@ int cachesBloque(int directorio, int bloque, int id_hilo){
             break;
         }
     }
-    //cout<<resultado<<endl;
     return resultado;
 }
     
@@ -1704,50 +1766,14 @@ void storeWord(int id_hilo, vector<int> palabra) {
         }
     }
     
-    /*if(palabra[3]==128 && id_hilo==2){
-        cout<<palabra[3]<<" sw esta cache: "<< estaCache(cachePrin,seccion,bloque)<<endl;
-        cout<<palabra[3]<<" sw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
-        cout<<palabra[3]<<" sw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
-        cout<<palabra[3]<<" sw esta inv: "<< estaInvalido(cachePrin,seccion)<<endl;
-        cout<<palabra[3]<<" sw cacheprin: "<<cachePrin<<endl;
-        cout<<palabra[3]<<" sw cacheaux1: "<<cacheAux1<<endl;
-        cout<<palabra[3]<<" sw cacheaux2: "<<cacheAux2<<endl;
-        cout<<palabra[3]<<" sw directorio: "<<directorio<<endl;
-        cout<<palabra[3]<<" sw bloque: "<<bloque<<endl;
-        cout<<palabra[3]<<" sw esta moddir: "<< estaModificadodir(directorio,bloque)<<endl;
-        cout<<palabra[3]<<" sw esta comdir: "<< estaCompartidodir(directorio,bloque)<<endl;
-        cout<<palabra[3]<<" sw esta uncdir: "<< estaUncacheddir(directorio,bloque)<<endl;
-        int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);    //pregunta las caches donde esta el bloque compartido 
-        cout<<"sw cachesInvalidar: " << cachesinvalidar<<endl;
-    }*/
-    /*if(bloque==12){
-        cout<<"SW MODIFICA BLOQUE 12 "<<palabra[3]<<endl;
-    }*/
-    /*cout<<palabra[3]<<" sw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
-    cout<<palabra[3]<<" sw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
-    cout<<palabra[3]<<" sw esta inv: "<< estaInvalido(cachePrin,seccion)<<endl;
-    cout<<palabra[3]<<" sw cacheprin: "<<cachePrin<<endl;
-    cout<<palabra[3]<<" sw cacheaux1: "<<cacheAux1<<endl;
-    cout<<palabra[3]<<" sw cacheaux2: "<<cacheAux2<<endl;
-    cout<<palabra[3]<<" sw directorio: "<<directorio<<endl;
-    cout<<palabra[3]<<" sw bloque: "<<bloque<<endl;
-    cout<<palabra[3]<<" sw esta moddir: "<< estaModificadodir(directorio,bloque)<<endl;
-    cout<<palabra[3]<<" sw esta comdir: "<< estaCompartidodir(directorio,bloque)<<endl;
-    cout<<palabra[3]<<" sw esta uncdir: "<< estaUncacheddir(directorio,bloque)<<endl;
-    */
-    
     while(siga){    //mientras siga = true entra en el ciclo
         if(reservarCache(cachePrin)){                                                           //reserva cacheprincipal
             mLocks[cachePrin] = 1;                                                              //actualiza vector para liberacion de recursos
-            //pthread_barrier_wait(&barrier);pthread_barrier_wait(&barrier);
             if(estaCache(cachePrin,seccion,bloque) && estaModificado(cachePrin,seccion)){       //pregunta si bloque esta en cache y si esta modificado
-                //cout<<"sw esta cache y M"<<endl;
                 guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);                          //Guarda el dato en el bloque que esta en la seccion de la cache principal
-                //cout<<"sw guarda el dato"<<endl;
                 mLocks = liberarRecursos(mLocks);                                               //libera recursos
                 siga=false;                                                                     //para que se salga del ciclo
             }else{
-                //cout<<"if donde se pega"<<endl;
                 if(estaCache(cachePrin,seccion,bloque) && estaCompartido(cachePrin,seccion)){   //Pregunta si el bloque esta en cache y si esta compartido
                     //<<"sw esta en cache y esta compartida"<<endl;
                     if(reservarDirectorio(bloque)){
@@ -1760,15 +1786,10 @@ void storeWord(int id_hilo, vector<int> palabra) {
                             3 = si esta en ambas
                         */
                         int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);        //Pregunta cuales caches hay que invalidar
-                        //cout<<"sw caches a invalidar"<<endl;
-                        //cout<<cachesinvalidar;
-                        //cout<<directorio;
                         switch (cachesinvalidar) {
                             case 0:{                                                            //si el bloque solo esta en cacheaux1
                                 actualizaDirSW(directorio,cachePrin,bloque);                //Pone el bloque como modificado y indica que esta en la cache principal
-                                //cout<<"sw actualiza directorio esta y m"<<endl;
                                 guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);    //Guarda el dato en el bloque que esta en la seccion de la cache principal  
-                                //cout<<"sw guarda dato esta y m"<<endl;
                                 mLocks = liberarRecursos(mLocks);                           //libera recursos
                                 siga=false;                                                 
                                 break;
@@ -1777,11 +1798,8 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                 if(reservarCache(cacheAux1)){                                   //reserva cacheaux1
                                     mLocks[cacheAux1] = 1;                                      //actualiza vector para liberacion de recursos
                                     invalidarCache(cacheAux1,seccion);                                  //Invalida cacheaux1
-                                    //cout<<"sw invalida cache esta y m"<<endl;
                                     actualizaDirSW(directorio,cachePrin,bloque);                //Pone el bloque como modificado y indica que esta en la cache principal
-                                    //cout<<"sw actualiza directorio esta y m"<<endl;
                                     guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);    //Guarda el dato en el bloque que esta en la seccion de la cache principal  
-                                    //cout<<"sw guarda dato esta y m"<<endl;
                                     mLocks = liberarRecursos(mLocks);                           //libera recursos
                                     siga=false;                                                 
                                 }else{                                                          //entra si cacheaux1 no pudo ser reservado
@@ -1793,11 +1811,8 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                 if(reservarCache(cacheAux2)){                                   
                                     mLocks[cacheAux2] = 1;                                      
                                     invalidarCache(cacheAux2,seccion);                                  
-                                    //cout<<"swinvalida cacheaux2 esta y m"<<endl;
                                     actualizaDirSW(directorio,cachePrin,bloque);                
-                                    //cout<<"sw actualiza directorio esta y m"<<endl;
                                     guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);    
-                                    //cout<<"sw guarda dato esta y m"<<endl;
                                     mLocks = liberarRecursos(mLocks);                           
                                     siga=false;                                                 
                                 }else{                                                          
@@ -1811,13 +1826,9 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                     if(reservarCache(cacheAux2)){
                                         mLocks[cacheAux2] = 1;                                 
                                         invalidarCache(cacheAux1,seccion);
-                                        //cout<<"sw invalida cacheaux1"<<endl;
                                         invalidarCache(cacheAux2,seccion);
-                                        //cout<<"sw invalida cacheaux2"<<endl;
                                         actualizaDirSW(directorio,cachePrin,bloque);                   
-                                        //cout<<"sw actualiza directorio"<<endl;            
-                                        guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);     
-                                        //cout<<"sw guarda dato"<<endl;     
+                                        guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);    
                                         mLocks = liberarRecursos(mLocks);                          
                                         siga=false;    
                                     }else{
@@ -1830,24 +1841,17 @@ void storeWord(int id_hilo, vector<int> palabra) {
                             }
                         }
                     }else{                                                                      //Entra si directorio donde esta el bloque no se puede reservar
-                        //cout<<"sw libera "<<endl;
                         mLocks = liberarRecursos(mLocks);
                     }
                 }else{                                                                          //si el bloque no esta en cache o esta invalidado
-                    //cout<<"sw pide directorio"<<endl;
                     if(reservarDirectorio(bloque)){                                             //reserva el directorio donde esta el bloque que se quiere modificar
                         mLocks[directorio] = 1;
                         bool detener = false;
                         //Es para caerle encima al bloque y quede coherente 
                         if(estaModificado(cachePrin,seccion)){
-                            //cout<<palabra[3]<<"SW el dato esta modificado"<<endl;
                             int bloqueAguardar = pedirBloqueModificado(cachePrin,seccion);
                             int directorioNuevo = directorioBloque(bloqueAguardar); 
                             int direccion2 = bloqueAguardar * 16 / 4;
-                            //cout<<"SW bloque a guardar: "<< bloqueAguardar<<endl;
-                            //cout<<"SW directorio 2:" << directorio2<<endl;
-                            //cout<<"SW direcion 2:" << direccion2<<endl;
-
                             if(directorio == directorioNuevo){
                                 guardaCacheDatosMem(bloqueAguardar, direccion2, seccion, cachePrin);
                                 ponerUncached(bloqueAguardar,directorioNuevo);
@@ -1897,14 +1901,10 @@ void storeWord(int id_hilo, vector<int> palabra) {
                         }
                         if(!detener){
                             if(estaUncacheddir(directorio,bloque)){                                 //el bloque este uncached
-                                //cout<<"sw uncached"<<endl;
                                 falloCacheDatos(bloque,directorio, dir, seccion, id_hilo);                     //trae el bloque de cache
                                 actualizaDirSW(directorio,cachePrin,bloque);                        //Pone el bloque como modificado y indica que esta en la cache principal
-                                //cout<<"sw actualiza directorio"<<endl;
                                 guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);            //guarda dato
-                                //cout<<"sw guarda dato"<<endl;
                                 mLocks = liberarRecursos(mLocks);                                   //libera recursos
-                                //cout<<"sw liberarRecursos"<<endl;
                                 siga = false;
                             }else{
                                 if(estaCompartidodir(directorio,bloque)){                           //el bloque este compartido en directorio
@@ -1914,27 +1914,18 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                         2 = si esta en cacheaux2
                                         3 = si esta en ambas
                                     */
-                                    //cout<<"sw esta compartido en directorio"<<endl;
                                     int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);    //pregunta las caches donde esta el bloque compartido 
-                                    //cout<<"sw cachesInvalidar: " << cachesinvalidar<<endl;
                                     switch (cachesinvalidar) {                                          //mismos comentarios que para cuando esta compartido en la cache
                                         case 1:{      
-                                            //cout<<"sw metodo reservar cacheaux1:"<< reservarCache(cacheAux1)<<endl;    
                                             if(reservarCache(cacheAux1)){
                                                 mLocks[cacheAux1] = 1;
-                                                //cout<<"sw fallocache"<<endl;
                                                 falloCacheDatos(bloque,directorio, dir, seccion, id_hilo);         //trae el dato de la memoria de datos
-                                                //cout<<"sw invalidar"<<endl;
                                                 invalidarCache(cacheAux1,seccion);
-                                                //cout<<"sw invalida 1"<<endl;
                                                 actualizaDirSW(directorio,cachePrin,bloque);
-                                                //cout<<"sw actualiza"<<endl;
                                                 guardarDato(id_hilo,directorio,seccion,palabraBloque,palabra[2]);   
-                                                //cout<<"sw guarda"<<endl;
                                                 mLocks = liberarRecursos(mLocks);
                                                 siga=false;
                                             }else{
-                                                //cout<<"sw liberarRecursos"<<endl;
                                                 mLocks = liberarRecursos(mLocks);
                                             }
                                             break;
@@ -1944,16 +1935,12 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                                 mLocks[cacheAux2] = 1;
                                                 falloCacheDatos(bloque,directorio, dir, seccion, id_hilo);         //trae el dato de la memoria de datos
                                                 invalidarCache(cacheAux2,seccion);
-                                                //cout<<"sw invalida 2"<<endl;
                                                 actualizaDirSW(directorio,cachePrin,bloque);
-                                                //cout<<"sw actualiza"<<endl;
                                                 guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);
-                                                //cout<<"sw guarda"<<endl;
                                                 mLocks = liberarRecursos(mLocks);
                                                 siga=false;
                                             }else{
                                                 mLocks = liberarRecursos(mLocks);
-                                                //cout<<"sw liberarRecursos"<<endl;
                                             }
                                             break;
                                         }
@@ -1964,13 +1951,9 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                                     mLocks[cacheAux2] = 1;
                                                     falloCacheDatos(bloque,directorio, dir, seccion, id_hilo);         //trae el dato de la memoria de datos
                                                     invalidarCache(cacheAux1,seccion);
-                                                    //cout<<"sw invalida 3"<<endl;
                                                     invalidarCache(cacheAux2,seccion);
-                                                    //cout<<"sw invalida"<<endl;
                                                     actualizaDirSW(directorio,cachePrin,bloque);
-                                                    //cout<<"sw actualiza"<<endl;
-                                                    guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);   
-                                                    //cout<<"sw guardarDato"<<endl;
+                                                    guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);  
                                                     mLocks = liberarRecursos(mLocks);
                                                     siga=false;    
                                                 }else{
@@ -1979,15 +1962,12 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                                 
                                             }else{
                                                 mLocks = liberarRecursos(mLocks);
-                                                //cout<<"sw liberarRecursos"<<endl;
                                             }
                                             break;
                                         }
                                     } 
                                 }else{  //Este modificado 
                                     int cachesinvalidar = cachesBloque(directorio,bloque,id_hilo);
-                                    //cout<<directorio<<endl;
-                                    //cout<<cachesinvalidar<<endl;
                                     switch (cachesinvalidar) {                                                  //comentarios iguales a los de compartido en la cache
                                         case 1:{                            
                                             if(reservarCache(cacheAux1)){
@@ -1995,11 +1975,8 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                                 guardaCacheDatosMem(bloque, dir, seccion, cacheAux1);           // guarda el dato en memoria antes de invalidarlo
                                                 guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux1);   //trae el dato de la cacheaux1 a la cache principal
                                                 invalidarCache(cacheAux1,seccion);
-                                                //cout<<"sw invalida1s"<<endl;
                                                 actualizaDirSW(directorio,cachePrin,bloque);
-                                                //cout<<"sw actualiza"<<endl;
-                                                guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);   
-                                                //cout<<"sw guarda"<<endl;
+                                                guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);  
                                                 mLocks = liberarRecursos(mLocks);
                                                 siga=false;
                                             }else{
@@ -2013,11 +1990,8 @@ void storeWord(int id_hilo, vector<int> palabra) {
                                                 guardaCacheDatosMem(bloque, dir, seccion, cacheAux2);           // guarda el dato en memoria antes de invalidarlo
                                                 guardaCacheDatosCache(bloque, seccion, cachePrin, cacheAux2);   //trae el dato de la cacheaux2 a la cache principal
                                                 invalidarCache(cacheAux2,seccion);
-                                                //cout<<"sw invalida2s"<<endl;
                                                 actualizaDirSW(directorio,cachePrin,bloque);
-                                                //cout<<"sw actualiza"<<endl;
                                                 guardarDato(id_hilo,bloque,seccion,palabraBloque,palabra[2]);
-                                                //cout<<"sw guardarDato"<<endl;
                                                 mLocks = liberarRecursos(mLocks);
                                                 siga=false;
                                             }else{
@@ -2036,9 +2010,6 @@ void storeWord(int id_hilo, vector<int> palabra) {
             }
         }
     }
-    cout<<"sw guarda dato "<<dato<<" en "<< palabra[3] <<" cpu:" << id_hilo<<endl;
-    //cout<<"fin sw";
-    //cout<<palabra[3]<<endl;
 }
 
 // Metodo para realizar el LW con todos sus casos
@@ -2077,34 +2048,18 @@ void loadWord(int id_hilo, vector<int> palabra) {
             break;
         }
     }
-    /*if(bloque==12){
-        cout<<"LW MODIFICA BLOQUE 12 "<<palabra[3]<<endl;
-    }*/
-    /*if(palabra[3] == 260){
-        cout<<"LW: "<<palabra[3]<<" cpu:" << id_hilo<<endl;
-    }*/
-    //cout<<"LW: "<<palabra[3]<<" cpu:" << id_hilo<<endl;
-    /*cout<<"lw esta cache: "<< estaCache(cachePrin,seccion,bloque)<<endl;
-    cout<<"lw esta mod: "<< estaModificado(cachePrin,seccion)<<endl;
-    cout<<"lw esta com: "<< estaCompartido(cachePrin,seccion)<<endl;
-    cout<<"lw esta inv: "<< estaInvalido(cachePrin,seccion)<<endl;
-    cout<<"lw direccion: "<<palabra[3]<<endl;*/
     while(siga){
         if(reservarCache(cachePrin)){
             mLocks[cachePrin] = 1; 
-            //cout << "lw reserva cache principal" << endl;
             if(estaCache(cachePrin,seccion,bloque) && !estaInvalido(cachePrin,seccion)){
-                //cout << "lw guarda si esta compartida y es c o m" << endl;
                 leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                 siga = false;
                 mLocks = liberarRecursos(mLocks);
             }else{
                 if(reservarDirectorio(bloque)){
                     bool detener = false;
-                    //cout << "lw reserva directorio del bloque" << endl; 
                     mLocks[directorio] = 1;
                     if(estaModificado(cachePrin,seccion)){
-                        //cout<<"LW el dato esta modificado"<<endl;
                         int bloqueAguardar = pedirBloqueModificado(cachePrin,seccion);
                         int directorioNuevo = directorioBloque(bloqueAguardar); 
                         int direccion2 = bloqueAguardar * 16 / 4;
@@ -2162,7 +2117,6 @@ void loadWord(int id_hilo, vector<int> palabra) {
                             leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                             siga = false;
                             mLocks = liberarRecursos(mLocks);
-                            //cout << "lw guarda si no esta en cache o esta invalido y no esta modificaco en directorio" << endl;
                         }else{ //esta modificado en directorio
                             int cachesmodificadas = cachesBloque(directorio,bloque,cachePrin);
                             switch (cachesmodificadas) {                                                  
@@ -2176,9 +2130,7 @@ void loadWord(int id_hilo, vector<int> palabra) {
                                         leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                                         siga = false;
                                         mLocks = liberarRecursos(mLocks);
-                                        //cout << " lw guarda si no esta en cache o esta invalida y esta modificada en cacheaux1" << endl;
                                     }else{
-                                        //cout << "lw Libera recursos porque cacheaux1 esta ocupada" << endl;
                                         mLocks = liberarRecursos(mLocks);
                                     }
                                     break;
@@ -2193,10 +2145,8 @@ void loadWord(int id_hilo, vector<int> palabra) {
                                         leePalabra(cachePrin, bloque ,seccion, palabraBloque, palabra[2]);
                                         siga = false;
                                         mLocks = liberarRecursos(mLocks);
-                                        //cout << "lw guarda si no esta en cache o esta invalida y esta modificada en cacheaux2" << endl;
                                     }else{
                                         mLocks = liberarRecursos(mLocks);
-                                        //cout << "lw Libera recursos porque cacheaux2 esta ocupada" << endl;
                                     }
                                     break;
                                 }
@@ -2204,7 +2154,6 @@ void loadWord(int id_hilo, vector<int> palabra) {
                         }
                     }
                 }else{
-                    //cout << "Libera recursos porque el directorio del bloque estaba ocupado" << endl;
                     mLocks = liberarRecursos(mLocks);
                 }
             }
@@ -2224,9 +2173,6 @@ void loadWord(int id_hilo, vector<int> palabra) {
             break;
         }
     }
-    cout<<"LW carga dato "<<dato<<" en "<< palabra[3] <<" cpu:" << id_hilo<<endl;
-    //cout<<"fin load";
-    //cout<<palabra[3]<<endl;
 }
     
 // Metodo para realizar el LL con todos sus casos
@@ -2254,7 +2200,6 @@ void storeConditional(int id_hilo, vector<int> palabra) {
     switch (id_hilo) {
         case 1:{
             while(siga){
-                cout<<"aca 1"<<endl;
                 if(pthread_mutex_trylock(&mRL1) == 0){
                     if(RL1 == reg1[palabra[1]] + palabra[3]){
                         if(RL2 == reg1[palabra[1]] + palabra[3] && RL3 == reg1[palabra[1]] + palabra[3]){
@@ -2317,19 +2262,11 @@ void storeConditional(int id_hilo, vector<int> palabra) {
         }
         case 2:{
             while(siga){
-                /*cout<<"aca 2"<<endl;
-                cout<<"RL1: "<<RL1<<endl;
-                cout<<"RL2: "<<RL2<<endl;
-                cout<<"RL3: "<<RL3<<endl;
-                cout<<"Direccion "<<reg2[palabra[1]] + palabra[3]<<endl;*/
                 if(pthread_mutex_trylock(&mRL2) == 0){
-                    cout<<"cpu2 Entro Mutex RL2"<<endl;    
                     if(RL2 == reg2[palabra[1]] + palabra[3]){
                         if(RL1 == reg2[palabra[1]] + palabra[3] && RL3 == reg2[palabra[1]] + palabra[3]){
                             if(pthread_mutex_trylock(&mRL1) == 0 ){
-                    cout<<"cpu2 Entro Mutex RL1"<<endl;    
                                 if(pthread_mutex_trylock(&mRL3) == 0) {
-                    cout<<"cpu2 Entro Mutex RL3"<<endl;    
                                         RL2 = -1;
                                         RL1 = -1;
                                         RL3 = -1;
@@ -2348,7 +2285,6 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                         }else{
                             if(RL1 == reg2[palabra[1]] + palabra[3]){
                                 if(pthread_mutex_trylock(&mRL1) == 0) {
-                    cout<<"cpu2 Entro Mutex RL1"<<endl;    
                                         RL2 = -1;
                                         RL1 = -1;
                                         storeWord(id_hilo,palabra);
@@ -2361,7 +2297,6 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                             }else{
                                 if(RL3 == reg2[palabra[1]] + palabra[3]){
                                     if(pthread_mutex_trylock(&mRL3) == 0) {
-                    cout<<"cpu2 Entro Mutex RL3"<<endl;    
                                             RL1 = -1;
                                             RL3 = -1;
                                             storeWord(id_hilo,palabra);
@@ -2389,19 +2324,11 @@ void storeConditional(int id_hilo, vector<int> palabra) {
         }
         case 3:{
             while(siga){
-                /*cout<<"aca 3"<<endl;
-                cout<<"RL1: "<<RL1<<endl;
-                cout<<"RL2: "<<RL2<<endl;
-                cout<<"RL3: "<<RL3<<endl;
-                cout<<"Direccion "<<reg3[palabra[1]] + palabra[3]<<endl;*/
                 if(pthread_mutex_trylock(&mRL3) == 0){
-                    cout<<"cpu3 Entro Mutex RL3"<<endl;
                     if(RL3 == reg3[palabra[1]] + palabra[3]){
                         if(RL1 == reg3[palabra[1]] + palabra[3] && RL2 == reg3[palabra[1]] + palabra[3]){
                             if(pthread_mutex_trylock(&mRL1) == 0 ){
-                    cout<<"cpu3 Entro Mutex RL1"<<endl;    
                                 if(pthread_mutex_trylock(&mRL2) == 0) {
-                    cout<<"cpu3 Entro Mutex RL2"<<endl;    
                                         RL1 = -1;
                                         RL2 = -1;
                                         RL3 = -1;
@@ -2420,7 +2347,6 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                         }else{
                             if(RL2 == reg3[palabra[1]] + palabra[3]){
                                 if(pthread_mutex_trylock(&mRL2) == 0) {
-                    cout<<"cpu3 Entro Mutex RL2"<<endl;    
                                         RL2 = -1;
                                         RL3 = -1;
                                         storeWord(id_hilo,palabra);
@@ -2433,7 +2359,6 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                             }else{
                                 if(RL1 == reg3[palabra[1]] + palabra[3]){
                                     if(pthread_mutex_trylock(&mRL1) == 0) {
-                    cout<<"cpu3 Entro Mutex RL1"<<endl;    
                                             RL1 = -1;
                                             RL3 = -1;
                                             storeWord(id_hilo,palabra);
