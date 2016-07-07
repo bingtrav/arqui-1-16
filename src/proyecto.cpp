@@ -154,6 +154,8 @@ void llenaMemDatos() {
         memDatos2[a] = 1;
         memDatos3[a] = 1;
     }
+    memDatos1[0] = 0;
+    /*
     memDatos3[1] = 0;
     memDatos2[0] = 0;
     memDatos2[1] = 0;
@@ -161,7 +163,13 @@ void llenaMemDatos() {
     memDatos2[3] = 0;
     memDatos2[4] = 0;
     memDatos2[5] = 0;
-    
+    */
+}
+
+void inicializarRL() {
+    RL1 = -1;
+    RL2 = -1;
+    RL3 = -1;
 }
 
 void inicializaDir() {
@@ -2246,6 +2254,7 @@ void storeConditional(int id_hilo, vector<int> palabra) {
     switch (id_hilo) {
         case 1:{
             while(siga){
+                cout<<"aca 1"<<endl;
                 if(pthread_mutex_trylock(&mRL1) == 0){
                     if(RL1 == reg1[palabra[1]] + palabra[3]){
                         if(RL2 == reg1[palabra[1]] + palabra[3] && RL3 == reg1[palabra[1]] + palabra[3]){
@@ -2308,11 +2317,19 @@ void storeConditional(int id_hilo, vector<int> palabra) {
         }
         case 2:{
             while(siga){
+                /*cout<<"aca 2"<<endl;
+                cout<<"RL1: "<<RL1<<endl;
+                cout<<"RL2: "<<RL2<<endl;
+                cout<<"RL3: "<<RL3<<endl;
+                cout<<"Direccion "<<reg2[palabra[1]] + palabra[3]<<endl;*/
                 if(pthread_mutex_trylock(&mRL2) == 0){
+                    cout<<"cpu2 Entro Mutex RL2"<<endl;    
                     if(RL2 == reg2[palabra[1]] + palabra[3]){
                         if(RL1 == reg2[palabra[1]] + palabra[3] && RL3 == reg2[palabra[1]] + palabra[3]){
                             if(pthread_mutex_trylock(&mRL1) == 0 ){
+                    cout<<"cpu2 Entro Mutex RL1"<<endl;    
                                 if(pthread_mutex_trylock(&mRL3) == 0) {
+                    cout<<"cpu2 Entro Mutex RL3"<<endl;    
                                         RL2 = -1;
                                         RL1 = -1;
                                         RL3 = -1;
@@ -2331,6 +2348,7 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                         }else{
                             if(RL1 == reg2[palabra[1]] + palabra[3]){
                                 if(pthread_mutex_trylock(&mRL1) == 0) {
+                    cout<<"cpu2 Entro Mutex RL1"<<endl;    
                                         RL2 = -1;
                                         RL1 = -1;
                                         storeWord(id_hilo,palabra);
@@ -2343,6 +2361,7 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                             }else{
                                 if(RL3 == reg2[palabra[1]] + palabra[3]){
                                     if(pthread_mutex_trylock(&mRL3) == 0) {
+                    cout<<"cpu2 Entro Mutex RL3"<<endl;    
                                             RL1 = -1;
                                             RL3 = -1;
                                             storeWord(id_hilo,palabra);
@@ -2370,11 +2389,19 @@ void storeConditional(int id_hilo, vector<int> palabra) {
         }
         case 3:{
             while(siga){
-                if(pthread_mutex_trylock(&mRL1) == 0){
+                /*cout<<"aca 3"<<endl;
+                cout<<"RL1: "<<RL1<<endl;
+                cout<<"RL2: "<<RL2<<endl;
+                cout<<"RL3: "<<RL3<<endl;
+                cout<<"Direccion "<<reg3[palabra[1]] + palabra[3]<<endl;*/
+                if(pthread_mutex_trylock(&mRL3) == 0){
+                    cout<<"cpu3 Entro Mutex RL3"<<endl;
                     if(RL3 == reg3[palabra[1]] + palabra[3]){
                         if(RL1 == reg3[palabra[1]] + palabra[3] && RL2 == reg3[palabra[1]] + palabra[3]){
                             if(pthread_mutex_trylock(&mRL1) == 0 ){
+                    cout<<"cpu3 Entro Mutex RL1"<<endl;    
                                 if(pthread_mutex_trylock(&mRL2) == 0) {
+                    cout<<"cpu3 Entro Mutex RL2"<<endl;    
                                         RL1 = -1;
                                         RL2 = -1;
                                         RL3 = -1;
@@ -2393,6 +2420,7 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                         }else{
                             if(RL2 == reg3[palabra[1]] + palabra[3]){
                                 if(pthread_mutex_trylock(&mRL2) == 0) {
+                    cout<<"cpu3 Entro Mutex RL2"<<endl;    
                                         RL2 = -1;
                                         RL3 = -1;
                                         storeWord(id_hilo,palabra);
@@ -2405,6 +2433,7 @@ void storeConditional(int id_hilo, vector<int> palabra) {
                             }else{
                                 if(RL1 == reg3[palabra[1]] + palabra[3]){
                                     if(pthread_mutex_trylock(&mRL1) == 0) {
+                    cout<<"cpu3 Entro Mutex RL1"<<endl;    
                                             RL1 = -1;
                                             RL3 = -1;
                                             storeWord(id_hilo,palabra);
@@ -4359,6 +4388,7 @@ int main (int argc, char** argv) {
     //imprimirMemP();
     llenaMemDatos();
     inicializaDir();
+    inicializarRL();
     inicializaCacheDatos();
     cout << "Por favor digite el quantum que tendrá el programa:" << endl;
     cin >> quantum; // Se guarda le quantum global que se usará en el programa
